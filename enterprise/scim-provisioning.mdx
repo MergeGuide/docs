@@ -1,0 +1,213 @@
+---
+title: "SCIM Provisioning"
+description: "Automate user lifecycle management with SCIM v2"
+---
+
+# SCIM Provisioning
+
+<Info>Available on Business and Enterprise plans.</Info>
+
+SCIM v2 (System for Cross-domain Identity Management) lets your identity provider automatically create, update, and deprovision MergeGuide users. When a user is added to the MergeGuide app in your IdP, they are provisioned immediately. When removed, their access is revoked within minutes.
+
+SCIM complements SAML SSO — configure both for fully automated user lifecycle management.
+
+## Prerequisites
+
+- Business or Enterprise plan
+- SAML SSO configured (see [SAML 2.0 SSO](/enterprise/saml-sso))
+- IdP admin access to configure SCIM
+
+## SCIM Endpoints
+
+| Parameter | Value |
+|-----------|-------|
+| **SCIM Base URL** | `https://portal.mergeguide.ai/scim/v2` |
+| **Authentication** | Bearer token |
+| **Supported version** | SCIM 2.0 (RFC 7644) |
+
+## Generate a SCIM Bearer Token
+
+1. Go to **Settings > Security > SCIM Provisioning**
+2. Click **Generate Token**
+3. Copy the token immediately — it is shown only once
+4. Store it securely (1Password, Vault, or your IdP's secret store)
+
+To rotate the token, generate a new one and update your IdP configuration. The old token is invalidated immediately upon rotation.
+
+## Attribute Mapping
+
+MergeGuide maps standard SCIM attributes as follows:
+
+| SCIM Attribute | MergeGuide Field | Required |
+|----------------|-----------------|----------|
+| `userName` | Email address | Yes |
+| `name.givenName` | First name | No |
+| `name.familyName` | Last name | No |
+| `emails[primary=true].value` | Email address | Yes |
+| `active` | Account active/suspended | Yes |
+| `groups` | MergeGuide roles | No |
+
+### Group-to-Role Mapping
+
+Map IdP groups to MergeGuide roles:
+
+| IdP Group Name | MergeGuide Role |
+|----------------|-----------------|
+| `mergeguide-admins` | Admin |
+| `mergeguide-developers` | Developer |
+| `mergeguide-viewers` | Viewer |
+
+Configure group mappings in **Settings > Security > SCIM Provisioning > Group Mappings**.
+
+## IdP-Specific Setup
+
+### Okta
+
+<Steps>
+  <Step title="Add the SCIM application">
+    In Okta, open the MergeGuide SAML app (already configured). Go to the **Provisioning** tab and click **Configure API Integration**.
+  </Step>
+  <Step title="Enter SCIM credentials">
+    - **SCIM connector base URL:** `https://portal.mergeguide.ai/scim/v2`
+    - **Unique identifier field:** `email`
+    - **Authentication Mode:** HTTP Header
+    - **Authorization:** `Bearer <your-token>`
+  </Step>
+  <Step title="Enable provisioning actions">
+    Under **To App**, enable:
+    - Push New Users
+    - Push Profile Updates
+    - Push Groups (if using group-to-role mapping)
+    - Deactivate Users
+  </Step>
+  <Step title="Assign users">
+    Assign the MergeGuide app to users or groups in Okta. Assigned users are provisioned automatically.
+  </Step>
+</Steps>
+
+### Azure Active Directory (Entra ID)
+
+<Steps>
+  <Step title="Open provisioning settings">
+    In the Azure portal, go to **Enterprise Applications > MergeGuide > Provisioning**.
+  </Step>
+  <Step title="Set provisioning mode">
+    Set **Provisioning Mode** to **Automatic**.
+  </Step>
+  <Step title="Enter admin credentials">
+    - **Tenant URL:** `https://portal.mergeguide.ai/scim/v2`
+    - **Secret Token:** `<your-bearer-token>`
+
+    Click **Test Connection** to verify.
+  </Step>
+  <Step title="Configure attribute mappings">
+    Review the default attribute mappings. MergeGuide uses `userName` for email. Verify `userPrincipalName` maps to `userName`.
+  </Step>
+  <Step title="Start provisioning">
+    Set **Provisioning Status** to **On** and save. Azure syncs on a ~40-minute cycle. Force an immediate sync with **Provision on demand**.
+  </Step>
+</Steps>
+
+### OneLogin
+
+<Steps>
+  <Step title="Enable SCIM in the MergeGuide app">
+    Open the MergeGuide connector in OneLogin. Go to **Configuration** and enter:
+    - **SCIM Base URL:** `https://portal.mergeguide.ai/scim/v2`
+    - **SCIM Bearer Token:** `<your-bearer-token>`
+  </Step>
+  <Step title="Enable provisioning">
+    On the **Provisioning** tab, enable **Enable provisioning** and configure the desired triggers.
+  </Step>
+</Steps>
+
+## Example SCIM API Calls
+
+These examples use the SCIM API directly — typically your IdP makes these calls, but they are useful for testing and troubleshooting.
+
+### List Users
+
+```bash
+curl -X GET "https://portal.mergeguide.ai/scim/v2/Users" \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/scim+json"
+```
+
+### Create a User
+
+```bash
+curl -X POST "https://portal.mergeguide.ai/scim/v2/Users" \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "jane.doe@example.com",
+    "name": {
+      "givenName": "Jane",
+      "familyName": "Doe"
+    },
+    "emails": [
+      {
+        "value": "jane.doe@example.com",
+        "primary": true
+      }
+    ],
+    "active": true
+  }'
+```
+
+### Deactivate a User
+
+```bash
+curl -X PATCH "https://portal.mergeguide.ai/scim/v2/Users/{userId}" \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "path": "active",
+        "value": false
+      }
+    ]
+  }'
+```
+
+### List Groups
+
+```bash
+curl -X GET "https://portal.mergeguide.ai/scim/v2/Groups" \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/scim+json"
+```
+
+## Deprovisioning Behavior
+
+When your IdP deactivates a user via SCIM:
+
+- The user's MergeGuide session is terminated within 5 minutes
+- The user cannot sign in via SSO or email/password
+- The user's data (evaluations, policies created) is retained
+- The seat is freed and available for reassignment
+
+Deprovisioned users appear as **Suspended** in **Settings > Team**. Admins can reactivate them or permanently delete the account.
+
+## Troubleshooting
+
+### Provisioning Errors in Your IdP
+
+Check the provisioning logs in your IdP first — Okta and Azure both provide per-user provisioning status with error details.
+
+Common causes:
+- **401 Unauthorized** — Token expired or incorrect. Regenerate and update the IdP.
+- **409 Conflict** — User already exists with that email. MergeGuide will update the existing record.
+- **400 Bad Request** — Required attribute missing. Verify `userName` and `emails` are mapped.
+
+### Users Not Deprovisioned
+
+Verify the IdP is sending `active: false` on deactivation. Some IdPs require explicit configuration to push deactivation events (Okta: **Deactivate Users** must be enabled under **To App**).
+
+### Group Mappings Not Applying
+
+Group memberships sync on the provisioning cycle, not in real time. Force a manual sync from your IdP or wait for the next cycle.

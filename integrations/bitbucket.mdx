@@ -1,0 +1,161 @@
+---
+title: "Bitbucket"
+description: "Connect MergeGuide to Bitbucket for pull request policy gates"
+---
+
+# Bitbucket
+
+Connect MergeGuide to Bitbucket to run compliance checks on every pull request. Violations are posted as inline comments and PR merges can be blocked until checks pass.
+
+## Supported Features
+
+- Pull request policy gate (block on violation)
+- Inline code comments on violations
+- Build status reporting
+- Bitbucket Pipelines integration
+- Bitbucket Cloud and Bitbucket Server/Data Center support
+
+## Bitbucket Cloud Setup
+
+### OAuth Consumer
+
+<Steps>
+  <Step title="Create an OAuth consumer">
+    In Bitbucket, go to your workspace **Settings > Apps and features > OAuth consumers > Add consumer**.
+
+    - **Name:** MergeGuide
+    - **Callback URL:** `https://portal.mergeguide.ai/integrations/bitbucket/callback`
+    - **Permissions:**
+      - Repositories: Read
+      - Pull requests: Read, Write
+      - Webhooks: Read and write
+  </Step>
+  <Step title="Copy credentials">
+    After saving, copy the **Key** (Client ID) and **Secret**.
+  </Step>
+  <Step title="Connect in MergeGuide">
+    Go to **Settings > Integrations > Bitbucket > Connect**. Enter the Key and Secret, then authorize.
+  </Step>
+  <Step title="Select repositories">
+    After connecting, select which workspaces and repositories to enable.
+  </Step>
+</Steps>
+
+### App Password (Alternative)
+
+If OAuth is not available, use an app password:
+
+1. Go to your Bitbucket account **Personal settings > App passwords > Create app password**
+2. Grant permissions: Repositories (Read), Pull requests (Read, Write), Webhooks (Read and write)
+3. In MergeGuide, go to **Settings > Integrations > Bitbucket > Connect with App Password**
+4. Enter your Bitbucket username and the app password
+
+<Note>
+App passwords are tied to individual user accounts. Use a dedicated service account for production integrations to prevent disruption if a user's account is deactivated.
+</Note>
+
+## Webhook Configuration
+
+MergeGuide registers webhooks automatically during OAuth setup. To register manually:
+
+1. In Bitbucket, go to the repository **Repository settings > Webhooks > Add webhook**
+2. Configure:
+   - **Title:** MergeGuide
+   - **URL:** `https://portal.mergeguide.ai/webhooks/bitbucket`
+   - **Triggers:** Pull Request: Created, Updated, Approved; Repository: Push
+3. Save the webhook
+
+## Pull Request Gate
+
+MergeGuide posts a build status to every PR. Configure the gate in **Settings > Integrations > Bitbucket > Gate Settings**:
+
+| Setting | Options |
+|---------|---------|
+| **Gate mode** | Advisory (comment only) or Blocking (require passing status) |
+| **Violation severity** | Block on Error only, or Error + Warning |
+
+### Blocking PRs (Bitbucket Cloud)
+
+1. Go to repository **Repository settings > Branch restrictions**
+2. Add a restriction on your main branch:
+   - Check **Require passing builds before merging**
+   - MergeGuide reports under the key `mergeguide/compliance`
+
+When a check fails:
+
+```
+mergeguide/compliance — FAILED
+3 violations: 2 errors, 1 warning
+https://portal.mergeguide.ai/evaluations/eval_abc123
+```
+
+## Bitbucket Pipelines Integration
+
+Add MergeGuide to your pipeline:
+
+```yaml
+# bitbucket-pipelines.yml
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: MergeGuide Compliance Check
+          image: node:20
+          script:
+            - npm install -g @mergeguide/cli
+            - mergeguide scan --output json --fail-on error
+          artifacts:
+            - mergeguide-results.json
+```
+
+Set `MERGEGUIDE_API_KEY` and `MERGEGUIDE_ORG_ID` as repository variables under **Repository settings > Repository variables**. Mark them **Secured** to prevent exposure in logs.
+
+Available `--fail-on` values: `never`, `warning`, `error`
+
+## Bitbucket Server / Data Center
+
+MergeGuide supports Bitbucket Server 7.0+ and Bitbucket Data Center.
+
+### Configuration
+
+1. Go to **Settings > Integrations > Bitbucket > Advanced**
+2. Enter your Bitbucket Server URL: `https://bitbucket.example.com`
+3. Create a personal access token in Bitbucket Server: **Account > Manage account > Personal access tokens**
+   - Permissions: Projects (Read), Repositories (Read), Pull requests (Write)
+4. Enter the token in MergeGuide
+
+<Note>
+Bitbucket Server must be reachable from MergeGuide's servers for webhook delivery. For air-gapped environments, use the [MergeGuide CLI](/getting-started/cli) to push results from inside your network rather than relying on webhooks.
+</Note>
+
+### Webhooks on Bitbucket Server
+
+Bitbucket Server uses project-level or repository-level webhooks. Register at: **Repository settings > Hooks > Add webhook**.
+
+## Inline Comments
+
+MergeGuide posts violation comments on the relevant PR diff lines:
+
+```
+MergeGuide: no-hardcoded-secrets [Error]
+API key detected. Remove the credential from source and rotate it immediately.
+Policy: no-hardcoded-secrets | Framework: SOC 2 CC6.1, PCI-DSS Req 6
+```
+
+Comments are updated in place on subsequent pushes rather than creating duplicates.
+
+## Troubleshooting
+
+### "Insufficient permissions" on PR comment
+
+The OAuth consumer or app password requires **Pull requests: Write** permission to post comments. Recreate the credentials with the correct permissions.
+
+### Build status not appearing on PR
+
+1. Verify the repository is enabled under **Settings > Integrations > Bitbucket**
+2. Confirm webhooks are registered and active in Bitbucket
+3. Check that PR events are included in the webhook triggers
+
+### Webhook deliveries failing (Bitbucket Server)
+
+Check **Repository settings > Hooks** for the webhook delivery log. Common causes: network firewall between your Bitbucket Server and `portal.mergeguide.ai`, or SSL certificate validation failure.

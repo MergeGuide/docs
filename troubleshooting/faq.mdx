@@ -55,11 +55,11 @@ Offline mode uses cached policies and does not report to the dashboard.
 |------|-------|----------|-------------------|
 | Free | $0 | — | OWASP Top 10, CWE Top 25 |
 | Pro | $29/seat/mo | — | + NIST SSDF, OWASP ASVS L1, CIS Controls, PCI-DSS |
-| Team | $39/seat/mo | 5 seats | + SOC 2, HIPAA, EU AI Act, GDPR, OWASP ASVS L2, PolicyMerge, SBOM, OSCAL |
-| Business | $79/seat/mo | 10 seats | + DORA, ISO 27001:2022, NIST SP 800-53, FedRAMP, StateRAMP, SAML/OIDC SSO, SCIM, RBAC, dedicated CSM |
-| Enterprise | Custom | — | + NIS2, Colorado AI Act, custom detection rules, government tenant |
+| Team | $39/seat/mo | 5 seats | + SOC 2, HIPAA, EU AI Act, GDPR, OWASP ASVS L2, PolicyMerge, SBOM, SAML/OIDC SSO |
+| Business | $79/seat/mo | 10 seats | + DORA, ISO 27001:2022, NIST SP 800-53, FedRAMP, StateRAMP, OSCAL export, SCIM, RBAC, dedicated CSM |
+| Enterprise | Custom | — | + NIS2, Colorado AI Act, custom detection rules, OSCAL webhooks, government tenant |
 
-Annual billing available with 20% discount.
+Annual billing available with ~18% discount.
 
 ### What does the Free plan include?
 
@@ -93,7 +93,7 @@ Free gives individual developers access to:
 
 ### Can I export compliance evidence for my auditor?
 
-Yes, on Team plan and above. MergeGuide exports compliance posture as NIST OSCAL v1.1.2 — the machine-readable standard used by FedRAMP and major GRC platforms. Import the output directly into Drata, Vanta, Secureframe, Tugboat Logic, or any OSCAL-compatible tool.
+Yes, on Business and Enterprise plans. MergeGuide exports compliance posture as NIST OSCAL v1.1.2 — the machine-readable standard used by FedRAMP and major GRC platforms. Import the output directly into Drata, Vanta, Secureframe, Tugboat Logic, or any OSCAL-compatible tool.
 
 From the dashboard: **Compliance > Export > OSCAL**.
 
@@ -105,7 +105,7 @@ curl -X POST https://api.mergeguide.ai/v1/compliance/reports \
   -d '{"frameworks": ["soc2"], "format": "oscal"}'
 ```
 
-**Business plan** additionally supports OSCAL webhooks for automated GRC platform delivery.
+**Enterprise plan** additionally supports OSCAL webhooks for automated GRC platform delivery.
 
 ### Is MergeGuide SOC 2 compliant?
 
@@ -224,9 +224,9 @@ See [MCP Server](/user-guides/mcp-server) for details.
 
 - **API key** — All plans
 - **OAuth 2.0** — All plans
-- **SAML 2.0 SSO** — Business and Enterprise
-- **OIDC / OAuth 2.0 + PKCE** — Business and Enterprise
-- **SCIM v2 provisioning** — Enterprise only
+- **SAML 2.0 SSO** — Team, Business, and Enterprise
+- **OIDC / OAuth 2.0 + PKCE** — Team, Business, and Enterprise
+- **SCIM v2 provisioning** — Business and Enterprise
 - **WebAuthn / Passkeys** — All plans
 - **TOTP MFA** — All plans
 

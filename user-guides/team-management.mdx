@@ -1,0 +1,132 @@
+---
+title: "Team Management"
+description: "Invite members, manage roles, and configure organization access"
+---
+
+# Team Management
+
+Manage your team at **Settings > Team**. Only Owners and Admins can invite members or modify roles.
+
+## Roles
+
+| Role | Permissions |
+|------|-------------|
+| **Owner** | Full access — billing, delete org, configure SSO/SCIM, all Admin actions |
+| **Admin** | Manage policies, invite/remove members, configure SCM connections, all Developer actions |
+| **Developer** | View evaluations, manage personal API keys |
+| **Viewer** | View evaluations and compliance data, no write access |
+
+Each organization has exactly one Owner (the account that created it). Ownership can be transferred from **Settings > Team > Transfer Ownership**.
+
+## Inviting Members
+
+<Steps>
+  <Step title="Go to Team settings">
+    Go to **Settings > Team > Invite Member**.
+  </Step>
+  <Step title="Enter email and role">
+    Enter the member's email address and select their role.
+  </Step>
+  <Step title="Send invitation">
+    Click **Send Invite**. The member receives an email with a link to accept the invitation.
+
+    Invitations expire after 7 days. Resend from **Settings > Team > Pending Invitations**.
+  </Step>
+</Steps>
+
+When the invited member accepts:
+- If they do not have a MergeGuide account, they are prompted to create one
+- If they already have an account, they are added to your organization and can switch to it from the org switcher
+
+<Note>
+Inviting a member consumes a seat. If you are at your seat limit, you must add more seats before sending the invitation. See [Billing & Subscription](/user-guides/billing).
+</Note>
+
+## Role Permissions
+
+| Action | Viewer | Developer | Admin | Owner |
+|--------|--------|-----------|-------|-------|
+| View evaluations | Yes | Yes | Yes | Yes |
+| View compliance reports | Yes | Yes | Yes | Yes |
+| Export compliance evidence | Yes | Yes | Yes | Yes |
+| Manage personal API keys | No | Yes | Yes | Yes |
+| Enable/disable policies | No | No | Yes | Yes |
+| Configure SCM connections | No | No | Yes | Yes |
+| Invite members | No | No | Yes | Yes |
+| Remove members | No | No | Yes | Yes |
+| Change member roles | No | No | Yes | Yes |
+| Configure SSO/SCIM | No | No | No | Yes |
+| Manage billing | No | No | No | Yes |
+| Delete organization | No | No | No | Yes |
+
+## Changing a Member's Role
+
+1. Go to **Settings > Team**
+2. Find the member and click **Edit**
+3. Select the new role
+4. Save
+
+Role changes take effect immediately on the member's next page load.
+
+## Removing Members
+
+1. Go to **Settings > Team**
+2. Find the member and click **Remove**
+3. Confirm removal
+
+Removed members lose access immediately. Their data (evaluations attributed to them, API keys created by them) is retained. The seat is freed.
+
+If the organization uses SSO enforcement, the member is also prevented from signing in via SSO on their next attempt.
+
+## Seat Limits by Plan
+
+| Plan | Maximum Seats |
+|------|--------------|
+| Free | 3 |
+| Pro | 5 |
+| Team | 25 |
+| Business | 50 |
+| Enterprise | Unlimited |
+
+When you reach the seat limit, invitations are disabled until you add more seats or remove existing members.
+
+## Pending Invitations
+
+View all pending invitations at **Settings > Team > Pending Invitations**.
+
+Actions available:
+- **Resend** — sends the invitation email again with a fresh 7-day expiry
+- **Cancel** — invalidates the invitation link
+
+## Organization Switching
+
+Users who are members of multiple MergeGuide organizations can switch between them without signing out.
+
+To switch organizations:
+1. Click your organization name in the top-left of the dashboard
+2. Select a different organization from the dropdown
+3. The dashboard reloads in the context of the selected organization
+
+Each organization has its own policies, repositories, evaluations, and settings. Switching does not affect the other organization's state.
+
+## SCIM Auto-Provisioning
+
+Business and Enterprise plans support SCIM v2 for automatic user lifecycle management. When SCIM is configured, your identity provider manages MergeGuide membership automatically — manual invitation is not required.
+
+See [SCIM Provisioning](/enterprise/scim-provisioning).
+
+## Audit Log
+
+All team management actions are recorded in the audit log: invitations sent, roles changed, members removed, SSO and SCIM configuration changes.
+
+View the audit log at **Settings > Security > Audit Log**. Audit log retention varies by plan:
+
+| Plan | Audit Log Retention |
+|------|---------------------|
+| Free | 7 days |
+| Pro | 30 days |
+| Team | 60 days |
+| Business | 90 days |
+| Enterprise | 2 years |
+
+Export the audit log as CSV or JSON from **Settings > Security > Audit Log > Export**.

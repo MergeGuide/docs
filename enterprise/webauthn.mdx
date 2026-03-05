@@ -1,0 +1,130 @@
+---
+title: "WebAuthn & MFA"
+description: "Configure WebAuthn passkeys and multi-factor authentication"
+---
+
+# WebAuthn & MFA
+
+MergeGuide supports WebAuthn/passkeys and TOTP-based multi-factor authentication on all plans. Admins can enforce MFA org-wide.
+
+## Supported MFA Methods
+
+| Method | Type | Notes |
+|--------|------|-------|
+| Security keys (YubiKey, etc.) | WebAuthn hardware | Phishing-resistant |
+| Platform authenticators | WebAuthn built-in | Face ID, Touch ID, Windows Hello |
+| TOTP apps | Time-based OTP | Google Authenticator, Authy, 1Password |
+| Backup codes | Recovery | One-time use, 8 codes per account |
+
+## Registering a Security Key (YubiKey)
+
+Hardware security keys (YubiKey 5, Google Titan, etc.) are the strongest MFA option. They are phishing-resistant because authentication is bound to the specific origin.
+
+<Steps>
+  <Step title="Go to security settings">
+    Go to **Account Settings > Security > Multi-Factor Authentication > Add Security Key**.
+  </Step>
+  <Step title="Name your key">
+    Enter a descriptive name (e.g., "YubiKey 5 NFC — desk") to identify this authenticator later.
+  </Step>
+  <Step title="Insert and tap the key">
+    When prompted, insert your YubiKey into a USB port (or hold it near your NFC reader for NFC models) and touch the gold contact. The browser handles the WebAuthn ceremony.
+  </Step>
+  <Step title="Confirm registration">
+    The key appears in your registered authenticators list. Registration is complete.
+  </Step>
+</Steps>
+
+<Tip>
+Register at least two security keys — a primary and a backup stored securely offsite. If you lose your only hardware key and have no other MFA method, account recovery requires contacting support.
+</Tip>
+
+## Registering a Platform Authenticator
+
+Platform authenticators are built into your device: Face ID and Touch ID on Apple devices, Windows Hello on Windows 10/11, and biometric sensors on Android. They create a passkey that is synced via iCloud Keychain, Google Password Manager, or Windows credentials.
+
+<Steps>
+  <Step title="Go to security settings">
+    Go to **Account Settings > Security > Multi-Factor Authentication > Add Passkey**.
+  </Step>
+  <Step title="Authenticate with your device">
+    Your browser prompts you to authenticate with the device's built-in method (Face ID, fingerprint, PIN, etc.).
+  </Step>
+  <Step title="Name your passkey">
+    Enter a name identifying the device (e.g., "MacBook Pro — Touch ID").
+  </Step>
+</Steps>
+
+Platform authenticators registered on Apple devices sync across your iCloud Keychain, so the same passkey works on your iPhone and Mac automatically.
+
+## Setting Up TOTP
+
+Time-based one-time passwords work with any authenticator app (Google Authenticator, Authy, 1Password, Bitwarden, Microsoft Authenticator).
+
+<Steps>
+  <Step title="Go to security settings">
+    Go to **Account Settings > Security > Multi-Factor Authentication > Set Up Authenticator App**.
+  </Step>
+  <Step title="Scan the QR code">
+    Scan the displayed QR code with your authenticator app. If you cannot scan it, use the manual entry key shown below the QR code.
+  </Step>
+  <Step title="Enter the verification code">
+    Enter the 6-digit TOTP code shown in your app to confirm successful setup.
+  </Step>
+  <Step title="Save backup codes">
+    After confirming, download or copy your backup codes. Store them securely — each code can be used once to access your account if you lose your authenticator.
+  </Step>
+</Steps>
+
+## Backup Codes
+
+Backup codes are generated when you first enable MFA. Each code is single-use.
+
+To view or regenerate codes: **Account Settings > Security > Multi-Factor Authentication > Backup Codes > View**.
+
+<Warning>
+Regenerating backup codes invalidates all previously generated codes. If someone obtains your old codes, regenerating new ones revokes them.
+</Warning>
+
+## Managing Registered Authenticators
+
+View and remove authenticators at **Account Settings > Security > Multi-Factor Authentication**.
+
+To remove an authenticator:
+1. Click **Remove** next to the authenticator
+2. Confirm removal by completing an authentication challenge with another registered method
+
+You cannot remove your last authenticator if MFA enforcement is active on your organization.
+
+## Admin: Enforce MFA
+
+Organization Owners and Admins can require MFA for all members.
+
+1. Go to **Settings > Security > Authentication**
+2. Enable **Require multi-factor authentication**
+3. Set a **Grace period** — members have this many hours to enroll before being locked out (minimum 1 hour, maximum 7 days)
+
+When enforcement is active:
+- New members must enroll in MFA before accessing any dashboard features
+- Existing members who have not enrolled are redirected to the MFA setup flow on next sign-in
+- Members who do not enroll within the grace period are suspended until they complete enrollment
+
+<Note>
+MFA enforcement does not apply to SSO-only users if your IdP handles MFA. If you use SAML or OIDC SSO, enforce MFA at the IdP level instead.
+</Note>
+
+## Troubleshooting
+
+### Security key not recognized
+
+- Verify your browser supports WebAuthn (Chrome, Firefox, Safari, Edge — all current versions do)
+- Try a different USB port or use NFC if your key supports it
+- On Linux, some USB security keys require a udev rule: `SUBSYSTEM=="usb", ATTR{idVendor}=="1050", TAG+="uaccess"`
+
+### TOTP code rejected
+
+TOTP codes are time-sensitive. Verify your device clock is accurate (within 30 seconds). On Android, sync via **Settings > Date & time > Sync now**. On iOS, enable **Settings > General > Date & Time > Set Automatically**.
+
+### Lost access to all MFA methods
+
+Contact support at security@mergeguide.ai with your account email and proof of identity. Account recovery requires verification matching your account's registration information.

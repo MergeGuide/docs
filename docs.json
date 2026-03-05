@@ -46,10 +46,13 @@
             ]
           },
           {
-            "group": "Dashboard",
+            "group": "Dashboard & Account",
             "pages": [
               "user-guides/dashboard",
-              "user-guides/cli"
+              "user-guides/cli",
+              "user-guides/billing",
+              "user-guides/team-management",
+              "user-guides/security"
             ]
           },
           {
@@ -73,7 +76,20 @@
           {
             "group": "Enterprise",
             "pages": [
-              "enterprise/saml-sso"
+              "enterprise/saml-sso",
+              "enterprise/oidc-sso",
+              "enterprise/scim-provisioning",
+              "enterprise/webauthn",
+              "enterprise/rbac",
+              "enterprise/tier-comparison"
+            ]
+          },
+          {
+            "group": "SCM Integrations",
+            "pages": [
+              "integrations/gitlab",
+              "integrations/bitbucket",
+              "integrations/azure-devops"
             ]
           },
           {

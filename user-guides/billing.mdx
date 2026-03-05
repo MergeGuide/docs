@@ -1,0 +1,141 @@
+---
+title: "Billing & Subscription"
+description: "Manage your MergeGuide plan, seats, and payment settings"
+---
+
+# Billing & Subscription
+
+Manage your subscription at **Settings > Billing**. Billing is handled by Stripe — MergeGuide does not store payment card data.
+
+## Plans
+
+| Plan | Price | Seats | Key Features |
+|------|-------|-------|-------------|
+| **Free** | $0 | Up to 3 | 5 repos, 100 evaluations/mo, GitHub only |
+| **Pro** | $29/seat/mo | Up to 5 | 20 repos, 1K evaluations/mo, custom policies, Slack |
+| **Team** | $39/seat/mo | 5 minimum | 100 repos, 5K evaluations/mo, SAML SSO, compliance reports |
+| **Business** | $79/seat/mo | 10 minimum | 200 repos, 10K evaluations/mo, SCIM, OSCAL export, custom roles |
+| **Enterprise** | $99/seat/mo | 50 minimum | Unlimited repos and evaluations, dedicated support |
+
+Annual billing is available at a 10% discount for Pro and above. Contact sales for Enterprise annual pricing.
+
+## Upgrading Your Plan
+
+<Steps>
+  <Step title="Go to Billing settings">
+    Go to **Settings > Billing > Change Plan**.
+  </Step>
+  <Step title="Select a plan">
+    Review the plan comparison and select the plan you want to upgrade to.
+  </Step>
+  <Step title="Configure seats">
+    Enter the number of seats. Seats must meet the plan minimum.
+  </Step>
+  <Step title="Confirm the upgrade">
+    Review the prorated charge and confirm. The plan change takes effect immediately.
+  </Step>
+</Steps>
+
+When upgrading, MergeGuide calculates a prorated credit for the unused portion of your current billing period and applies it to the new plan.
+
+## Downgrading Your Plan
+
+Downgrades take effect at the end of your current billing period. You retain access to your current plan's features until then.
+
+<Warning>
+Downgrading to a plan with lower seat limits will suspend the most recently added members if your current seat count exceeds the new plan's limit. Remove members before downgrading to control which accounts are suspended.
+</Warning>
+
+To downgrade:
+
+1. Go to **Settings > Billing > Change Plan**
+2. Select the lower plan
+3. Review the change summary and confirm
+
+## Seat Management
+
+A seat is consumed by each active member in your organization. Owners always consume a seat.
+
+### Adding Seats
+
+1. Go to **Settings > Billing > Seats**
+2. Click **Add Seats** and enter the quantity to add
+3. Confirm — you are charged immediately for the prorated amount for the current period
+
+### Removing Seats
+
+Remove seats by first removing the corresponding members from your organization (**Settings > Team > Remove**), then:
+
+1. Go to **Settings > Billing > Seats**
+2. Click **Remove Seats** and enter the quantity to remove
+3. The reduction takes effect at the next billing cycle
+
+You cannot reduce seats below your current active member count.
+
+## Annual vs. Monthly Billing
+
+Switch between monthly and annual billing from **Settings > Billing > Billing Cycle**.
+
+- **Monthly:** Charged each month, no commitment
+- **Annual:** 10% discount, billed once per year, non-refundable
+
+Switching from monthly to annual: the annual charge is applied at your next renewal date. You are not charged twice for the current month.
+
+Switching from annual to monthly: takes effect at the end of the annual period.
+
+## Invoice History
+
+View and download invoices at **Settings > Billing > Invoices**. Invoices are also emailed to the billing contact address automatically.
+
+To change the billing contact email:
+
+1. Go to **Settings > Billing > Billing Contact**
+2. Enter the new email address
+3. Save
+
+All future invoices are sent to the updated address. Historical invoices remain available in the dashboard.
+
+## Payment Methods
+
+Update your payment method at **Settings > Billing > Payment Method**. MergeGuide accepts:
+
+- Credit and debit cards (Visa, Mastercard, American Express, Discover)
+- ACH bank transfer (Enterprise accounts, minimum $1,000/month)
+
+To update:
+
+1. Click **Update Payment Method**
+2. Enter your new card or bank account details
+3. Save — the new method is charged on the next billing date
+
+The previous payment method is removed after the new one is saved successfully.
+
+## Enterprise Invoicing
+
+Enterprise customers can request invoice-based billing (NET 30) with ACH transfer. Contact sales to set this up.
+
+## Failed Payments
+
+If a payment fails, MergeGuide enters a 3-day grace period. During this time:
+- Your account retains full access
+- An email is sent to the billing contact with instructions to update payment
+- MergeGuide retries the charge automatically
+
+After the grace period, the account is downgraded to Free until payment is resolved.
+
+## Cancellation
+
+To cancel your subscription:
+
+1. Go to **Settings > Billing > Cancel Subscription**
+2. Confirm cancellation
+
+Access continues until the end of your current billing period. After that, the organization is downgraded to Free. Your data is retained.
+
+<Note>
+Cancellation is immediate for the subscription but not for access. You retain access until the period ends. There are no refunds for partial months.
+</Note>
+
+## Tax and VAT
+
+If your organization is VAT-registered, enter your VAT number at **Settings > Billing > Tax ID**. VAT is applied based on your billing address location in compliance with applicable tax laws.

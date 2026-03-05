@@ -1,0 +1,149 @@
+---
+title: "GitLab"
+description: "Connect MergeGuide to GitLab for merge request policy gates"
+---
+
+# GitLab
+
+Connect MergeGuide to GitLab to run compliance checks on every merge request. Violations are posted as inline comments, and merge request approvals can be blocked until checks pass.
+
+## Supported Features
+
+- Merge request policy gate (block on violation)
+- Inline code comments on violations
+- Pipeline status reporting
+- GitLab CI template integration
+- Self-hosted GitLab support
+
+## OAuth App Setup
+
+<Steps>
+  <Step title="Create a GitLab OAuth application">
+    In GitLab, go to your group or user **Settings > Applications > Add new application**.
+
+    - **Name:** MergeGuide
+    - **Redirect URI:** `https://portal.mergeguide.ai/integrations/gitlab/callback`
+    - **Scopes:** `api`, `read_user`
+  </Step>
+  <Step title="Copy credentials">
+    After saving, copy the **Application ID** and **Secret**.
+  </Step>
+  <Step title="Connect in MergeGuide">
+    Go to **Settings > Integrations > GitLab > Connect**. Enter the Application ID and Secret, then authorize.
+  </Step>
+  <Step title="Select repositories">
+    After connecting, select which groups and repositories to enable. MergeGuide only receives webhook events for enabled repositories.
+  </Step>
+</Steps>
+
+## Webhook Configuration
+
+MergeGuide registers webhooks automatically during OAuth setup. If you need to register webhooks manually:
+
+1. In GitLab, go to the repository **Settings > Webhooks**
+2. Add a new webhook:
+   - **URL:** `https://portal.mergeguide.ai/webhooks/gitlab`
+   - **Secret Token:** Copy from **Settings > Integrations > GitLab > Webhook Secret**
+   - **Trigger:** Merge Request Events, Push Events
+3. Click **Add webhook** and test the connection
+
+## Merge Request Gate
+
+Once connected, MergeGuide posts a status check to every merge request. Configure the gate behavior in **Settings > Integrations > GitLab > Gate Settings**:
+
+| Setting | Options |
+|---------|---------|
+| **Gate mode** | Advisory (comment only) or Blocking (require passing check) |
+| **Violation severity** | Block on Error only, or Error + Warning |
+| **Comment verbosity** | Summary only, or Full violation details |
+
+### Blocking MRs
+
+To require the MergeGuide check to pass before merging:
+
+1. Go to GitLab repository **Settings > Merge requests**
+2. Under **Merge checks**, enable **Pipelines must succeed**
+3. MergeGuide reports its check as a pipeline status
+
+When a check fails, the MR shows:
+
+```
+MergeGuide compliance check — FAILED
+3 violations found: 2 errors, 1 warning
+View details: https://portal.mergeguide.ai/evaluations/eval_abc123
+```
+
+## GitLab CI Integration
+
+Add MergeGuide to your pipeline using the CI template:
+
+```yaml
+# .gitlab-ci.yml
+include:
+  - remote: 'https://portal.mergeguide.ai/ci/gitlab-ci.yml'
+
+mergeguide:
+  extends: .mergeguide-scan
+  variables:
+    MERGEGUIDE_API_KEY: $MERGEGUIDE_API_KEY  # Set in CI/CD Variables
+    MERGEGUIDE_ORG_ID: $MERGEGUIDE_ORG_ID
+```
+
+Store your API key in **Settings > CI/CD > Variables** as a masked, protected variable.
+
+The CI template runs MergeGuide on the current commit and posts results as a pipeline artifact. To fail the pipeline on violations:
+
+```yaml
+mergeguide:
+  extends: .mergeguide-scan
+  variables:
+    MERGEGUIDE_FAIL_ON: "error"  # Options: never, warning, error
+```
+
+## Self-Hosted GitLab
+
+MergeGuide supports GitLab self-managed (Community Edition and Enterprise Edition) version 15.0 and later.
+
+### Configure Self-Hosted URL
+
+1. Go to **Settings > Integrations > GitLab > Advanced**
+2. Enter your GitLab instance URL: `https://gitlab.example.com`
+3. Complete OAuth setup using your instance URL (replace `gitlab.com` with your domain in all URLs above)
+
+<Note>
+Your self-hosted GitLab instance must be network-accessible from MergeGuide's servers for webhook delivery. If your instance is on a private network, use the [MergeGuide CLI](/getting-started/cli) instead, which pushes results from inside your network.
+</Note>
+
+### API Rate Limits
+
+MergeGuide respects GitLab API rate limits. For high-volume environments (many simultaneous MRs), configure a dedicated service account with higher rate limits or use a GitLab group access token.
+
+## Inline Comments
+
+MergeGuide posts violation comments directly on the relevant lines in the merge request diff:
+
+```
+MergeGuide: no-hardcoded-secrets [Error]
+API key detected at this location. Remove and rotate the credential.
+Policy: no-hardcoded-secrets | Framework: SOC 2 CC6.1
+```
+
+Comments are updated (not duplicated) if the same violation persists across pushes. Resolved violations are marked as resolved automatically.
+
+## Troubleshooting
+
+### Webhook Not Receiving Events
+
+1. In GitLab, go to the repository **Settings > Webhooks** and click **Test** on the MergeGuide webhook
+2. Check the recent deliveries tab for HTTP status codes
+3. Verify the webhook secret matches **Settings > Integrations > GitLab > Webhook Secret** in MergeGuide
+
+### Check Not Appearing on MR
+
+1. Confirm the repository is enabled under **Settings > Integrations > GitLab**
+2. Verify the OAuth token has not expired — reconnect if needed
+3. Check that the MergeGuide app has `api` scope (not just `read_user`)
+
+### Comments Posted on Wrong Lines
+
+This can occur when the MR diff context is very large. MergeGuide uses the GitLab diff API for comment placement. If comments are misaligned, check for uncommitted changes in the base branch.

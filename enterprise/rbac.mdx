@@ -1,0 +1,160 @@
+---
+title: "Role-Based Access Control"
+description: "Manage member permissions with built-in and custom roles"
+---
+
+# Role-Based Access Control
+
+<Info>Custom roles are available on Business and Enterprise plans. Built-in roles are available on all plans.</Info>
+
+MergeGuide uses role-based access control (RBAC) to define what each member can view and do. Every member is assigned exactly one role per organization.
+
+## Built-in Roles
+
+Four built-in roles cover most teams:
+
+| Role | Description |
+|------|-------------|
+| **Owner** | Full organizational control, including billing, SSO/SCIM, and org deletion. Exactly one Owner per org. |
+| **Admin** | Manages team members, policies, and SCM connections. Cannot access billing or delete the org. |
+| **Developer** | Reads evaluation results. Manages their own API keys. Cannot modify policies or team settings. |
+| **Viewer** | Read-only access to evaluations and compliance data. No write access of any kind. |
+
+Ownership can be transferred from **Settings > Team > Transfer Ownership**. The previous owner becomes an Admin.
+
+## Built-in Role Permission Matrix
+
+| Permission | Viewer | Developer | Admin | Owner |
+|-----------|--------|-----------|-------|-------|
+| View evaluations | Yes | Yes | Yes | Yes |
+| View compliance reports | Yes | Yes | Yes | Yes |
+| Export evidence | Yes | Yes | Yes | Yes |
+| View audit log | No | No | Yes | Yes |
+| Manage own API keys | No | Yes | Yes | Yes |
+| Enable/disable policies | No | No | Yes | Yes |
+| Configure custom policies | No | No | Yes | Yes |
+| Configure SCM connections | No | No | Yes | Yes |
+| Invite members | No | No | Yes | Yes |
+| Remove members | No | No | Yes | Yes |
+| Change member roles | No | No | Yes | Yes |
+| Configure notifications | No | No | Yes | Yes |
+| Configure SSO (SAML/OIDC) | No | No | No | Yes |
+| Configure SCIM | No | No | No | Yes |
+| Manage billing | No | No | No | Yes |
+| Delete organization | No | No | No | Yes |
+
+## Custom Roles
+
+<Info>Available on Business and Enterprise plans.</Info>
+
+Custom roles let you define granular permission sets beyond the built-in roles. Use them when:
+
+- You need a role between Admin and Viewer (e.g., a security reviewer who can view audit logs but not manage team members)
+- Different teams need different subsets of policy management permissions
+- Regulatory requirements mandate finer-grained access separation
+
+### Creating a Custom Role
+
+1. Go to **Settings > Team > Roles > Create Role**
+2. Enter a role name and optional description
+3. Select permissions from the permission list
+4. Save
+
+Custom roles appear in the role dropdown when inviting members or editing existing members.
+
+### Permission List
+
+| Permission | Description |
+|------------|-------------|
+| `evaluations:read` | View evaluation results |
+| `evaluations:export` | Export evaluation data |
+| `compliance:read` | View compliance coverage reports |
+| `compliance:export` | Export OSCAL and evidence |
+| `policies:read` | View policies |
+| `policies:write` | Enable, disable, and configure policies |
+| `policies:create` | Create custom policies |
+| `repositories:read` | View connected repositories |
+| `repositories:write` | Connect and disconnect repositories |
+| `team:read` | View team members |
+| `team:invite` | Invite new members |
+| `team:remove` | Remove members |
+| `team:roles` | Change member roles |
+| `audit_log:read` | View the organization audit log |
+| `api_keys:self` | Manage own API keys |
+| `api_keys:all` | View and revoke all org API keys |
+| `notifications:write` | Configure notifications |
+| `settings:sso` | Configure SSO (Owner-level action) |
+| `settings:scim` | Configure SCIM (Owner-level action) |
+| `settings:billing` | Access billing (Owner-level action) |
+
+### Example: Security Reviewer Role
+
+A role for an internal auditor who needs read access to evaluations and the audit log, but cannot modify anything:
+
+```
+Permissions:
+  evaluations:read       Yes
+  evaluations:export     Yes
+  compliance:read        Yes
+  compliance:export      Yes
+  audit_log:read         Yes
+  policies:read          Yes
+  (all write permissions No)
+```
+
+### Example: Policy Manager Role
+
+A role for a security engineer who manages policies but cannot administer the team:
+
+```
+Permissions:
+  evaluations:read       Yes
+  evaluations:export     Yes
+  compliance:read        Yes
+  policies:read          Yes
+  policies:write         Yes
+  policies:create        Yes
+  repositories:read      Yes
+  (team management       No)
+```
+
+## Assigning Roles
+
+### At Invitation
+
+Select the role when sending an invitation (**Settings > Team > Invite Member**). Custom roles appear in the role dropdown alongside built-in roles.
+
+### Changing an Existing Member's Role
+
+1. Go to **Settings > Team**
+2. Find the member and click **Edit**
+3. Select the new role
+4. Save
+
+Role changes take effect immediately on the member's next page load. The change is recorded in the audit log.
+
+## SCIM Role Provisioning
+
+When SCIM is configured, IdP group membership maps to MergeGuide roles. Custom roles can be mapped in **Settings > Security > SCIM Provisioning > Group Mappings**:
+
+| IdP Group | MergeGuide Role |
+|-----------|-----------------|
+| `mergeguide-admins` | Admin |
+| `mergeguide-security-reviewers` | Security Reviewer (custom role) |
+| `mergeguide-developers` | Developer |
+
+See [SCIM Provisioning](/enterprise/scim-provisioning).
+
+## Troubleshooting
+
+### Custom role option not appearing
+
+Custom roles require a Business or Enterprise plan. If you are on a lower plan, the **Roles** section in Settings is not available. Upgrade your plan to access custom roles.
+
+### Member can't access a feature after role change
+
+Role changes take effect on the next page load. Have the member refresh the browser. If the issue persists, verify the role's permissions in **Settings > Team > Roles**.
+
+### Cannot change Owner role
+
+Only the Owner can transfer ownership. If the Owner's account is inaccessible, contact support for recovery assistance.

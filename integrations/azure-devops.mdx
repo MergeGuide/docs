@@ -1,0 +1,195 @@
+---
+title: "Azure DevOps"
+description: "Connect MergeGuide to Azure DevOps for pull request policy gates"
+---
+
+# Azure DevOps
+
+Connect MergeGuide to Azure DevOps to run compliance checks on every pull request. Violations appear as PR comments, and PR completion can be blocked until the MergeGuide check passes.
+
+## Supported Features
+
+- Pull request policy gate (block on violation)
+- Inline diff comments on violations
+- Build status reporting
+- Azure Pipelines task integration
+- Organization-level and project-level configuration
+
+## Service Connection Setup
+
+<Steps>
+  <Step title="Create a personal access token (PAT)">
+    In Azure DevOps, click your profile icon and go to **Personal access tokens > New Token**.
+
+    - **Name:** MergeGuide
+    - **Organization:** Select your organization
+    - **Expiration:** Set per your security policy (maximum 1 year)
+    - **Scopes (custom defined):**
+      - Code: Read
+      - Pull Request Threads: Read & write
+      - Build: Read & execute
+      - Service Connections: Read & query
+  </Step>
+  <Step title="Copy the token">
+    Copy the token immediately — it is not shown again.
+  </Step>
+  <Step title="Connect in MergeGuide">
+    Go to **Settings > Integrations > Azure DevOps > Connect**.
+
+    Enter:
+    - **Organization URL:** `https://dev.azure.com/{your-organization}`
+    - **Personal Access Token:** the token you just created
+  </Step>
+  <Step title="Select projects and repositories">
+    After connecting, select which Azure DevOps projects and repositories to enable.
+  </Step>
+</Steps>
+
+## Webhook Configuration
+
+MergeGuide registers service hooks automatically during setup. To register manually:
+
+1. In Azure DevOps, go to **Project settings > Service hooks > Create subscription**
+2. Select **Web Hooks** as the service
+3. Configure for each event type:
+
+| Event | Trigger |
+|-------|---------|
+| Pull request created | Set filters as needed |
+| Pull request updated | Set filters as needed |
+| Code pushed | Set filters as needed |
+
+4. Set the webhook URL to `https://portal.mergeguide.ai/webhooks/azure-devops`
+5. Add the shared secret from **Settings > Integrations > Azure DevOps > Webhook Secret** in MergeGuide
+
+## Pull Request Policy Gate
+
+### Advisory Mode (Comments Only)
+
+MergeGuide posts a comment thread on every PR with violation details. No blocking.
+
+### Blocking Mode
+
+Use Azure DevOps branch policies to require the MergeGuide status check before merging:
+
+<Steps>
+  <Step title="Go to branch policies">
+    In Azure DevOps, go to **Project settings > Repos > Policies**, then select your repository and main branch.
+  </Step>
+  <Step title="Add a status check">
+    Under **Additional settings**, click **+ Add status policy**.
+    - **Status to check:** `mergeguide/compliance`
+    - **Policy requirement:** Required
+    - **Reset conditions:** Reset when new code is pushed
+  </Step>
+  <Step title="Save the policy">
+    The MergeGuide check is now required. PRs cannot be completed until the check passes.
+  </Step>
+</Steps>
+
+When a check fails, the PR shows:
+
+```
+Required check: mergeguide/compliance — FAILED
+2 errors, 1 warning found.
+View report: https://portal.mergeguide.ai/evaluations/eval_abc123
+```
+
+## Azure Pipelines Task
+
+Add MergeGuide to your pipeline using the Pipelines task:
+
+```yaml
+# azure-pipelines.yml
+trigger:
+  - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '20.x'
+
+  - script: npm install -g @mergeguide/cli
+    displayName: 'Install MergeGuide CLI'
+
+  - script: mergeguide scan --output json
+    displayName: 'Run MergeGuide Compliance Scan'
+    env:
+      MERGEGUIDE_API_KEY: $(MERGEGUIDE_API_KEY)
+      MERGEGUIDE_ORG_ID: $(MERGEGUIDE_ORG_ID)
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'mergeguide-results.json'
+      artifactName: 'mergeguide-report'
+    condition: always()
+```
+
+Store `MERGEGUIDE_API_KEY` and `MERGEGUIDE_ORG_ID` as pipeline variables or in a variable group under **Library**. Mark them **secret** to prevent exposure in logs.
+
+### Fail the Pipeline on Violations
+
+```yaml
+  - script: mergeguide scan --fail-on error
+    displayName: 'Run MergeGuide Compliance Scan'
+    env:
+      MERGEGUIDE_API_KEY: $(MERGEGUIDE_API_KEY)
+      MERGEGUIDE_ORG_ID: $(MERGEGUIDE_ORG_ID)
+```
+
+Available `--fail-on` values: `never`, `warning`, `error`
+
+## Organization vs. Project Level
+
+### Organization-Level Setup
+
+Connect at the organization level to manage settings for all projects from one place. Requires an organization owner PAT.
+
+1. Go to **Settings > Integrations > Azure DevOps > Connect**
+2. Enter your organization URL: `https://dev.azure.com/{organization}`
+3. Select **Organization level** — MergeGuide discovers all projects automatically
+
+### Project-Level Setup
+
+Connect at the project level when you need separate configurations per project, or when organization-level access is not available.
+
+Enter the project URL: `https://dev.azure.com/{organization}/{project}`
+
+## Inline Comments
+
+MergeGuide posts violation comments on the relevant PR diff lines:
+
+```
+MergeGuide [Error]: no-hardcoded-secrets
+API key detected at this location.
+Remove the credential from source and rotate it immediately.
+
+Policy: no-hardcoded-secrets
+Frameworks: SOC 2 CC6.1, PCI-DSS Req 6.3
+```
+
+Comment threads are resolved automatically when violations are fixed in a subsequent push.
+
+## Troubleshooting
+
+### "TF401019" or unauthorized errors
+
+The PAT does not have the required scopes. Create a new PAT with Code (Read) and Pull Request Threads (Read & write) scopes.
+
+### Status check not appearing on PR
+
+1. Verify the repository is enabled under **Settings > Integrations > Azure DevOps**
+2. Confirm service hooks are registered in **Project settings > Service hooks**
+3. Check the service hook delivery log for errors
+
+### Webhook delivery failures
+
+Azure DevOps requires HTTPS endpoints with a valid TLS certificate. MergeGuide's webhook endpoint meets this requirement. If deliveries fail, check the status code in the service hook delivery log — 401 indicates an incorrect shared secret.

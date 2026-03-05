@@ -1,0 +1,184 @@
+---
+title: "OIDC SSO"
+description: "Configure OpenID Connect single sign-on for your organization"
+---
+
+# OIDC SSO
+
+<Info>Available on Business and Enterprise plans.</Info>
+
+OpenID Connect (OIDC) SSO lets your team authenticate with MergeGuide using your existing identity provider. MergeGuide supports the Authorization Code flow with PKCE.
+
+SAML 2.0 is also available if your IdP does not support OIDC. See [SAML 2.0 SSO](/enterprise/saml-sso).
+
+## Supported Identity Providers
+
+- Okta
+- Microsoft Azure Active Directory (Entra ID)
+- Google Workspace
+- Auth0
+- Any OIDC-compliant IdP (RFC 8252, RFC 7636)
+
+## Setup
+
+### Step 1: Gather MergeGuide OIDC Parameters
+
+Before configuring your IdP, collect the MergeGuide callback values:
+
+| Parameter | Value |
+|-----------|-------|
+| **Redirect URI** | `https://portal.mergeguide.ai/auth/oidc/callback` |
+| **Discovery endpoint** | `https://portal.mergeguide.ai/.well-known/openid-configuration` |
+| **Response type** | `code` |
+| **Code challenge method** | `S256` (PKCE) |
+| **Scopes** | `openid email profile` |
+
+### Step 2: Create an OIDC Application in Your IdP
+
+Register MergeGuide as an OIDC application. The application type is **Web Application** (server-side, not SPA or native).
+
+### Step 3: Configure OIDC in MergeGuide
+
+1. Go to **Settings > Security > Single Sign-On**
+2. Click **Configure OIDC**
+3. Enter the values from your IdP:
+
+| Field | Description |
+|-------|-------------|
+| **Discovery URL** | Your IdP's `.well-known/openid-configuration` URL |
+| **Client ID** | The client ID from your IdP app registration |
+| **Client Secret** | The client secret from your IdP app registration |
+
+4. Click **Save and Test**
+
+### Step 4: Test the Connection
+
+Click **Test SSO** — a new window opens the OIDC login flow without affecting your current session. Complete authentication and verify your attributes are parsed correctly. Click **Enable SSO** when satisfied.
+
+## IdP-Specific Setup
+
+### Okta
+
+<Steps>
+  <Step title="Create a new application">
+    In Okta, go to **Applications > Applications > Create App Integration**. Select **OIDC - OpenID Connect** and **Web Application**.
+  </Step>
+  <Step title="Configure the app">
+    - **App name:** MergeGuide
+    - **Sign-in redirect URI:** `https://portal.mergeguide.ai/auth/oidc/callback`
+    - **Sign-out redirect URI:** `https://portal.mergeguide.ai/auth/signout`
+    - **Assignments:** Assign to the appropriate groups
+  </Step>
+  <Step title="Copy credentials">
+    From the app's **General** tab, copy the **Client ID** and **Client Secret**.
+
+    **Discovery URL:** `https://<your-okta-domain>/.well-known/openid-configuration`
+  </Step>
+  <Step title="Enter values in MergeGuide">
+    Go to **Settings > Security > Single Sign-On > Configure OIDC** and enter the Client ID, Client Secret, and Discovery URL.
+  </Step>
+</Steps>
+
+### Azure Active Directory (Entra ID)
+
+<Steps>
+  <Step title="Register an application">
+    In the Azure portal, go to **Azure Active Directory > App registrations > New registration**.
+    - **Name:** MergeGuide
+    - **Redirect URI:** Web — `https://portal.mergeguide.ai/auth/oidc/callback`
+  </Step>
+  <Step title="Add a client secret">
+    Go to **Certificates & secrets > New client secret**. Set an expiration and copy the secret value immediately.
+  </Step>
+  <Step title="Configure token claims">
+    Go to **Token configuration > Add optional claim**. Add the `email` claim to ID tokens. If email is not in the token, add it under **Optional claims > ID > email**.
+  </Step>
+  <Step title="Copy the discovery URL">
+    The discovery URL format is:
+    ```
+    https://login.microsoftonline.com/{tenant-id}/v2.0/.well-known/openid-configuration
+    ```
+    Find your Tenant ID on the **Overview** page of your Azure AD directory.
+  </Step>
+  <Step title="Enter values in MergeGuide">
+    Go to **Settings > Security > Single Sign-On > Configure OIDC** and enter the Client ID, Client Secret, and Discovery URL.
+  </Step>
+</Steps>
+
+### Google Workspace
+
+<Steps>
+  <Step title="Create OAuth credentials">
+    In [Google Cloud Console](https://console.cloud.google.com), go to **APIs & Services > Credentials > Create Credentials > OAuth client ID**.
+    - **Application type:** Web application
+    - **Authorized redirect URIs:** `https://portal.mergeguide.ai/auth/oidc/callback`
+  </Step>
+  <Step title="Copy credentials">
+    Copy the **Client ID** and **Client Secret**.
+
+    **Discovery URL:** `https://accounts.google.com/.well-known/openid-configuration`
+  </Step>
+  <Step title="Restrict to your domain (recommended)">
+    Set the **Authorized JavaScript origins** to your domain and use Google Workspace domain restriction via the OAuth consent screen **Authorized domains** field to prevent sign-in from personal Google accounts.
+  </Step>
+  <Step title="Enter values in MergeGuide">
+    Go to **Settings > Security > Single Sign-On > Configure OIDC** and enter the Client ID, Client Secret, and Discovery URL.
+  </Step>
+</Steps>
+
+## Token and Claims Reference
+
+MergeGuide reads the following claims from the OIDC ID token:
+
+| Claim | MergeGuide Field | Required |
+|-------|-----------------|----------|
+| `sub` | User identifier | Yes |
+| `email` | Email address | Yes |
+| `given_name` | First name | No |
+| `family_name` | Last name | No |
+| `name` | Display name (fallback) | No |
+
+If `email` is not present in the ID token, the user cannot be provisioned.
+
+## Authorization Code Flow with PKCE
+
+MergeGuide uses PKCE (RFC 7636) for all OIDC flows. The flow:
+
+1. MergeGuide generates a random `code_verifier` and computes `code_challenge = BASE64URL(SHA256(code_verifier))`
+2. Authorization request includes `code_challenge` and `code_challenge_method=S256`
+3. After authentication, the IdP returns an authorization `code`
+4. Token exchange includes the original `code_verifier`
+5. IdP verifies the verifier against the challenge before issuing tokens
+
+This prevents authorization code interception attacks. Your IdP must support PKCE — all major IdPs (Okta, Azure AD, Google) do.
+
+## Enforcement
+
+Once OIDC is enabled, choose an enforcement level under **Settings > Security > SSO > Enforcement**:
+
+| Mode | Behavior |
+|------|---------|
+| **Optional** | Members can sign in with SSO or email/password |
+| **Required** | All members must use SSO; email/password login is disabled |
+
+<Warning>
+Set at least one Owner account exempt from SSO enforcement before enabling Required mode. This prevents lockout if your IdP becomes unavailable.
+</Warning>
+
+## Troubleshooting
+
+### "Invalid redirect_uri"
+
+The redirect URI in your IdP registration must exactly match `https://portal.mergeguide.ai/auth/oidc/callback` — no trailing slash, no variations.
+
+### "Email claim missing"
+
+Your IdP is not including the `email` claim in the ID token. For Azure AD, add the `email` optional claim to ID tokens. For Okta, verify the profile attributes include email and the app is configured to send `email` scope.
+
+### "Invalid client_secret"
+
+Client secrets have expiration dates in Azure AD and some other IdPs. Check whether the secret has expired and generate a new one if necessary.
+
+### Discovery URL Not Reachable
+
+MergeGuide fetches your IdP's discovery document at configuration time and periodically to rotate keys. Ensure the discovery URL is publicly accessible from MergeGuide's servers.

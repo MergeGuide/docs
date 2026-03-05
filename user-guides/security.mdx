@@ -1,0 +1,178 @@
+---
+title: "Security & Data Handling"
+description: "How MergeGuide handles your code and data, and how to configure security settings"
+---
+
+# Security & Data Handling
+
+## Data Handling Model
+
+MergeGuide performs static analysis on code at the time of a scan. **Source code is never stored.**
+
+When a scan runs (via PR webhook, CI pipeline, or CLI):
+
+1. The scan agent fetches the file content from your SCM at the moment of the scan
+2. Analysis runs in an isolated execution environment
+3. Results (violation descriptions, file paths, line numbers) are stored in MergeGuide
+4. Raw source content is discarded after analysis — it is never persisted to MergeGuide storage
+
+What MergeGuide stores:
+- Violation metadata: file path, line number, rule name, severity
+- Evaluation results: pass/fail status, timestamp, repository, branch
+- Compliance mapping: which controls were satisfied or violated
+- Audit log: user actions within the MergeGuide dashboard
+
+What MergeGuide does not store:
+- Raw source code
+- File contents
+- Commit history beyond what is needed to identify the evaluation context
+
+## Encryption
+
+| Layer | Standard |
+|-------|---------|
+| Data in transit | TLS 1.3 (minimum TLS 1.2 for legacy client compatibility) |
+| Data at rest | AES-256 |
+| API keys | Bcrypt hashed — only the hash is stored |
+| Webhook secrets | Encrypted at rest, never returned in API responses |
+
+All traffic between clients and `portal.mergeguide.ai` is HTTPS-only. HTTP requests are redirected to HTTPS automatically.
+
+## SOC 2 Type II
+
+MergeGuide is pursuing SOC 2 Type II certification covering the Security trust service criteria. Contact us at security@mergeguide.ai to request the current readiness status or to discuss audit timelines for procurement purposes.
+
+## GDPR
+
+MergeGuide processes limited personal data:
+
+- **Account data:** Name, email address, and hashed password for registered users
+- **Usage data:** Evaluation timestamps, login events, dashboard activity
+- **No special category data** is processed
+
+MergeGuide acts as a Data Processor for data held on behalf of organizational customers. The customer is the Data Controller.
+
+**Data residency:** MergeGuide infrastructure is hosted in AWS us-east-1 (Virginia, United States). For EU data residency requirements, contact sales.
+
+**Data subject requests:** Contact privacy@mergeguide.ai from the email address associated with your account to request data export or deletion.
+
+## Authentication Settings
+
+Configure authentication requirements at **Settings > Security**.
+
+### Password Policy
+
+Set minimum password requirements for all members:
+
+1. Go to **Settings > Security > Authentication**
+2. Configure the password policy: minimum length (default: 12), uppercase, numbers, special characters
+3. Save
+
+Password policy changes take effect on next password change. Existing passwords are not invalidated immediately.
+
+### Session Duration
+
+1. Go to **Settings > Security > Authentication**
+2. Set **Session Timeout** (default: 24 hours)
+3. Save
+
+## Multi-Factor Authentication
+
+MFA is available on all plans. See [WebAuthn & MFA](/enterprise/webauthn) for setup instructions.
+
+Admins can enforce MFA org-wide:
+
+1. Go to **Settings > Security > MFA**
+2. Enable **Require MFA**
+3. Set a grace period for members to enroll (minimum 1 hour, maximum 7 days)
+
+Members who do not enroll within the grace period are suspended until they complete setup.
+
+## IP Allowlisting
+
+<Info>Available on Enterprise plans.</Info>
+
+Restrict dashboard access to specific IP ranges:
+
+1. Go to **Settings > Security > Network Access**
+2. Click **Add IP Range**
+3. Enter the range in CIDR notation (e.g., `203.0.113.0/24`)
+4. Save
+
+<Warning>
+Add your current IP address to the allowlist before saving. Locking yourself out requires a support request to resolve.
+</Warning>
+
+## Audit Log
+
+All administrative actions are recorded in the audit log. View at **Settings > Security > Audit Log**.
+
+Events include: sign-in/sign-out, member invitation and removal, role changes, SSO/SCIM configuration changes, policy enable/disable, API key creation and revocation, billing changes.
+
+Audit log retention by plan:
+
+| Plan | Retention |
+|------|-----------|
+| Free | 7 days |
+| Pro | 30 days |
+| Team | 60 days |
+| Business | 90 days |
+| Enterprise | 2 years |
+
+Export the audit log as CSV or JSON for external SIEM ingestion.
+
+## API Key Security
+
+API keys are displayed only once at creation — MergeGuide stores only the hash.
+
+Best practices:
+- Use one key per integration or service, not a shared key
+- Set expiration dates on keys used in CI pipelines
+- Rotate keys if exposed — revoke immediately, generate a new one
+- Store keys in your secret management system, never in source code
+
+Revoke keys from **Settings > API Keys > Revoke**.
+
+Admins can view and revoke all org keys from **Settings > Security > API Keys > Organization Keys**.
+
+## Webhook Security
+
+Webhook payloads are signed with HMAC-SHA256. Verify the signature before processing:
+
+```typescript
+import crypto from 'crypto';
+
+function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(`sha256=${expected}`),
+    Buffer.from(signature)
+  );
+}
+```
+
+The signature is in the `X-MergeGuide-Signature` header. Reject requests where the signature does not match.
+
+## Infrastructure
+
+MergeGuide runs on AWS infrastructure in us-east-1:
+
+- **Compute:** AWS Lambda (serverless, isolated per request)
+- **Database:** Amazon DynamoDB (encrypted at rest)
+- **Storage:** Amazon S3 (encrypted at rest, private buckets)
+- **CDN:** Amazon CloudFront (TLS termination at edge)
+
+Infrastructure access is restricted to authorized personnel using least-privilege IAM roles.
+
+## Responsible Disclosure
+
+Report security vulnerabilities to security@mergeguide.ai. Include a description, steps to reproduce, and proof-of-concept (non-destructive only). We acknowledge reports within 2 business days.
+
+Do not publicly disclose vulnerabilities until we have had a reasonable opportunity to remediate.
