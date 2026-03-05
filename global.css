@@ -1,0 +1,22 @@
+/* Match MergeGuide portal sidebar - Navy sidebar in light mode */
+:root {
+  --sidebar-background: #1E293B;
+  --sidebar-text: #CBD5E1;
+  --sidebar-active: #3B82F6;
+}
+
+/* Light mode: Navy sidebar matching portal dashboard */
+[data-theme="light"] #sidebar,
+:not(.dark) #sidebar {
+  background-color: #1E293B;
+  color: #CBD5E1;
+}
+
+:not(.dark) #sidebar a {
+  color: #CBD5E1;
+}
+
+:not(.dark) #sidebar a:hover,
+:not(.dark) #sidebar a[data-active="true"] {
+  color: #FFFFFF;
+}
