@@ -1,0 +1,299 @@
+---
+title: Pattern Matching
+description: Advanced techniques for pattern matching in policies
+---
+
+# Pattern Matching
+
+MergeGuide uses a dual-layer detection engine: regex for fast known-pattern matching, and Semgrep for AST-based taint analysis and data flow tracking. Built-in policies use both layers. Custom policies can use regex patterns (and, in some configurations, Semgrep rules).
+
+## Detection Engine Layers
+
+| Layer | Technology | Best For |
+|-------|-----------|---------|
+| **Layer 1** | Regex | Known patterns, string matching, fast scanning |
+| **Layer 2** | Semgrep AST taint analysis | Data flow, injection vulnerabilities, language-aware detection |
+
+When you write a custom policy using `type: regex`, you're writing a Layer 1 pattern. The built-in policies for injection vulnerabilities (SQL, XSS, command injection) leverage Semgrep's taint analysis in Layer 2.
+
+MergeGuide supports multiple pattern types for different use cases.
+
+## Regex Patterns
+
+Regular expressions are the most common pattern type.
+
+### Basic Syntax
+
+```yaml
+patterns:
+  - type: regex
+    value: "console\\.log"
+    message: "console.log detected"
+```
+
+### Capturing Groups
+
+Use groups to provide context in messages:
+
+```yaml
+patterns:
+  - type: regex
+    value: "(password|secret|key)\\s*=\\s*['\"]([^'\"]+)['\"]"
+    message: "Hardcoded $1 detected with value partially shown"
+```
+
+### Common Patterns
+
+#### Hardcoded Secrets
+
+```yaml
+# API keys
+value: "(api[_-]?key|apikey)\\s*[=:]\\s*['\"][a-zA-Z0-9_-]{20,}['\"]"
+
+# AWS keys
+value: "AKIA[0-9A-Z]{16}"
+
+# Generic secrets
+value: "(secret|password|passwd|pwd)\\s*[=:]\\s*['\"][^'\"]{8,}['\"]"
+```
+
+#### Security Issues
+
+```yaml
+# eval usage
+value: "\\beval\\s*\\("
+
+# SQL injection
+value: "(SELECT|INSERT|UPDATE|DELETE)[^;]*\\$\\{[^}]+\\}"
+
+# XSS
+value: "innerHTML\\s*=\\s*[^;]*\\$\\{"
+```
+
+#### Code Quality
+
+```yaml
+# TODO comments
+value: "//\\s*TODO:?"
+
+# Console statements
+value: "console\\.(log|debug|info|warn|error)\\s*\\("
+
+# Debugger statements
+value: "\\bdebugger\\b"
+```
+
+### Regex Flags
+
+```yaml
+patterns:
+  - type: regex
+    value: "todo"
+    flags: "i"  # Case insensitive: matches TODO, Todo, todo
+```
+
+| Flag | Description |
+|------|-------------|
+| `i` | Case insensitive |
+| `m` | Multiline (^ and $ match line boundaries) |
+| `s` | Dot matches newline |
+
+### Negative Patterns
+
+Exclude certain contexts using negative lookahead:
+
+```yaml
+# Match console.log but not in comments
+value: "^(?!\\s*//).*console\\.log"
+
+# Match password but not in test files
+value: "password(?!.*\\.test\\.)"
+```
+
+## AST Patterns
+
+Abstract Syntax Tree patterns understand code structure.
+
+### JavaScript/TypeScript AST
+
+```yaml
+patterns:
+  - type: ast
+    language: javascript
+    value: |
+      CallExpression[callee.name="eval"]
+    message: "eval() call detected"
+```
+
+### Python AST
+
+```yaml
+patterns:
+  - type: ast
+    language: python
+    value: |
+      Call[func.id="eval"]
+    message: "eval() call detected"
+```
+
+### AST Query Syntax
+
+MergeGuide uses a CSS-like selector syntax for AST queries:
+
+```
+NodeType[attribute="value"]
+NodeType > ChildNodeType
+NodeType DescendantNodeType
+```
+
+Examples:
+
+```yaml
+# Function with specific name
+FunctionDeclaration[id.name="dangerousFunction"]
+
+# Method call on specific object
+CallExpression[callee.object.name="document"][callee.property.name="write"]
+
+# Any throw statement
+ThrowStatement
+
+# Import from specific package
+ImportDeclaration[source.value="lodash"]
+```
+
+### AST Benefits
+
+- **Structure-aware**: Won't match code in strings or comments
+- **Language-specific**: Understands language semantics
+- **Precise**: Can target specific code constructs
+
+### AST Limitations
+
+- Requires parsing (slower than regex)
+- Language-specific patterns needed
+- More complex to write
+
+## Semantic Patterns
+
+High-level patterns that detect code behaviors.
+
+### Available Semantic Patterns
+
+```yaml
+patterns:
+  - type: semantic
+    value: sql-string-concatenation
+    message: "Potential SQL injection"
+
+  - type: semantic
+    value: hardcoded-credential
+    message: "Hardcoded credential detected"
+
+  - type: semantic
+    value: insecure-random
+    message: "Insecure random number generation"
+```
+
+### Semantic Pattern List
+
+| Pattern | Description |
+|---------|-------------|
+| `sql-string-concatenation` | SQL built with string operations |
+| `hardcoded-credential` | Secrets in source code |
+| `insecure-random` | Math.random for security |
+| `missing-input-validation` | Unvalidated user input |
+| `unsafe-deserialization` | Deserializing untrusted data |
+| `path-traversal` | File path from user input |
+| `command-injection` | Shell commands with user input |
+| `open-redirect` | Redirect URL from user input |
+
+## Multi-Pattern Policies
+
+Combine multiple patterns:
+
+```yaml
+patterns:
+  # Pattern 1: Direct eval
+  - type: regex
+    value: "\\beval\\s*\\("
+    message: "Direct eval() usage"
+
+  # Pattern 2: new Function
+  - type: regex
+    value: "new\\s+Function\\s*\\("
+    message: "new Function() is equivalent to eval"
+
+  # Pattern 3: setTimeout with string
+  - type: ast
+    language: javascript
+    value: |
+      CallExpression[callee.name="setTimeout"][arguments.0.type="Literal"]
+    message: "setTimeout with string argument acts like eval"
+```
+
+## Pattern Context
+
+### Line Context
+
+Include surrounding lines for context:
+
+```yaml
+patterns:
+  - type: regex
+    value: "TODO"
+    context:
+      before: 2
+      after: 2
+```
+
+### File Context
+
+Apply patterns based on file location:
+
+```yaml
+patterns:
+  - type: regex
+    value: "console\\.log"
+    files:
+      - "src/**"
+      - "!src/**/*.test.*"
+```
+
+## Performance Tips
+
+1. **Order matters**: Put fast regex patterns before slow AST patterns
+2. **Be specific**: Narrow file patterns reduce scanning
+3. **Avoid backtracking**: Use atomic groups in complex regex
+4. **Cache results**: Patterns are cached per file
+
+### Regex Optimization
+
+```yaml
+# Slow: excessive backtracking
+value: ".*password.*"
+
+# Fast: anchored and specific
+value: "password\\s*="
+```
+
+## Testing Patterns
+
+### Test Mode
+
+```bash
+# Test pattern against file
+mergeguide check --policy policy.yaml --test-pattern "console\\.log" file.ts
+
+# Show all matches with context
+mergeguide check --policy policy.yaml --verbose --show-matches
+```
+
+### Pattern Playground
+
+Use the dashboard pattern tester:
+
+1. Go to **Policies > Create Policy**
+2. Enter pattern in the **Test** tab
+3. Paste sample code
+4. See matches highlighted in real-time

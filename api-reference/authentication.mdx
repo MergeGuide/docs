@@ -1,0 +1,339 @@
+---
+title: Authentication
+description: API authentication methods and credentials
+---
+
+# Authentication
+
+All MergeGuide API requests require authentication. This guide covers available authentication methods.
+
+## Authentication Methods
+
+### API Key (Recommended)
+
+Use an API key for programmatic access:
+
+```bash
+curl -H "Authorization: Bearer mg_key_abc123..." \
+  https://api.mergeguide.ai/v1/evaluations
+```
+
+### OAuth 2.0
+
+For interactive applications, use OAuth 2.0:
+
+```
+GET https://auth.mergeguide.ai/oauth/authorize
+  ?client_id=YOUR_CLIENT_ID
+  &redirect_uri=https://yourapp.com/callback
+  &response_type=code
+  &scope=read:evaluations write:policies
+```
+
+## Obtaining API Keys
+
+### Via Dashboard
+
+1. Go to [portal.mergeguide.ai](https://portal.mergeguide.ai)
+2. Navigate to **Settings > API Keys**
+3. Click **Generate New Key**
+4. Set name, permissions, and expiration
+5. Copy the key (shown only once)
+
+### Via CLI
+
+```bash
+# Login first
+mergeguide auth login
+
+# Generate API key
+mergeguide auth create-key --name "CI/CD Key" --scope read:evaluations,write:checks
+```
+
+## API Key Format
+
+API keys follow this format:
+
+```
+mg_key_[environment]_[random_string]
+
+Examples:
+mg_key_prod_a1b2c3d4e5f6g7h8i9j0...
+mg_key_test_x9y8z7w6v5u4t3s2r1q0...
+```
+
+## Key Permissions (Scopes)
+
+| Scope | Description |
+|-------|-------------|
+| `read:evaluations` | View evaluation results |
+| `write:evaluations` | Create new evaluations |
+| `read:policies` | View policy configurations |
+| `write:policies` | Modify policies |
+| `read:org` | View organization details |
+| `write:org` | Modify organization settings |
+| `admin` | Full administrative access |
+
+### Combining Scopes
+
+```bash
+# Create key with multiple scopes
+mergeguide auth create-key \
+  --name "Developer Key" \
+  --scope "read:evaluations,read:policies,write:evaluations"
+```
+
+## Using API Keys
+
+### HTTP Header (Recommended)
+
+```bash
+curl -H "Authorization: Bearer mg_key_prod_abc123..." \
+  https://api.mergeguide.ai/v1/evaluations
+```
+
+### Query Parameter (Not Recommended)
+
+For legacy systems only:
+
+```bash
+curl "https://api.mergeguide.ai/v1/evaluations?api_key=mg_key_prod_abc123..."
+```
+
+**Warning:** Query parameters may be logged in server logs. Use header authentication when possible.
+
+### Environment Variable
+
+Store keys in environment variables:
+
+```bash
+export MERGEGUIDE_API_KEY="mg_key_prod_abc123..."
+mergeguide check  # CLI uses this automatically
+```
+
+## Key Management
+
+### Listing Keys
+
+```bash
+# Via CLI
+mergeguide auth list-keys
+
+# Via API
+curl -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  https://api.mergeguide.ai/v1/api-keys
+```
+
+### Revoking Keys
+
+```bash
+# Via CLI
+mergeguide auth revoke-key --key-id key_abc123
+
+# Via API
+curl -X DELETE \
+  -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  https://api.mergeguide.ai/v1/api-keys/key_abc123
+```
+
+### Key Expiration
+
+Set expiration when creating keys:
+
+```bash
+mergeguide auth create-key \
+  --name "Temporary Key" \
+  --expires-in 7d  # 7 days
+```
+
+Expiration formats:
+- `30m` - 30 minutes
+- `24h` - 24 hours
+- `7d` - 7 days
+- `90d` - 90 days
+- `never` - No expiration (not recommended)
+
+## OAuth 2.0 Flow
+
+### Authorization Code Flow
+
+1. **Redirect user to authorize:**
+
+```
+GET https://auth.mergeguide.ai/oauth/authorize
+  ?client_id=YOUR_CLIENT_ID
+  &redirect_uri=https://yourapp.com/callback
+  &response_type=code
+  &scope=read:evaluations
+  &state=random_state_string
+```
+
+2. **Exchange code for token:**
+
+```bash
+curl -X POST https://auth.mergeguide.ai/oauth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "authorization_code",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+    "code": "AUTHORIZATION_CODE",
+    "redirect_uri": "https://yourapp.com/callback"
+  }'
+```
+
+3. **Response:**
+
+```json
+{
+  "access_token": "mg_token_abc123...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "mg_refresh_xyz789...",
+  "scope": "read:evaluations"
+}
+```
+
+### Refreshing Tokens
+
+```bash
+curl -X POST https://auth.mergeguide.ai/oauth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "refresh_token",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+    "refresh_token": "mg_refresh_xyz789..."
+  }'
+```
+
+## Security Best Practices
+
+### Key Storage
+
+- **Never commit keys** to version control
+- Use environment variables or secrets managers
+- Rotate keys regularly (every 90 days recommended)
+- Use minimum required scopes
+
+### Secrets Managers
+
+```bash
+# AWS Secrets Manager
+aws secretsmanager get-secret-value --secret-id mergeguide/api-key
+
+# HashiCorp Vault
+vault kv get secret/mergeguide/api-key
+
+# GitHub Actions
+${{ secrets.MERGEGUIDE_API_KEY }}
+```
+
+### IP Allowlisting
+
+Restrict key usage to specific IPs:
+
+```bash
+mergeguide auth create-key \
+  --name "Production Key" \
+  --allowed-ips "10.0.0.0/8,192.168.1.0/24"
+```
+
+## Error Responses
+
+### 401 Unauthorized
+
+```json
+{
+  "error": "unauthorized",
+  "message": "Invalid or expired API key",
+  "code": "AUTH_INVALID_KEY"
+}
+```
+
+Causes:
+- Missing Authorization header
+- Invalid key format
+- Expired key
+- Revoked key
+
+### 403 Forbidden
+
+```json
+{
+  "error": "forbidden",
+  "message": "Insufficient permissions for this operation",
+  "code": "AUTH_INSUFFICIENT_SCOPE",
+  "required_scope": "write:policies"
+}
+```
+
+Causes:
+- Key lacks required scope
+- IP not in allowlist
+- Organization access denied
+
+## Enterprise Authentication
+
+### SAML 2.0 SSO
+
+Available on **Business and Enterprise** plans. Connect your SAML 2.0 identity provider (Okta, Azure AD, Google Workspace, etc.) for single sign-on. See [SAML Setup](/enterprise/saml-sso).
+
+### OIDC / OAuth 2.0 + PKCE
+
+Available on **Business and Enterprise** plans. For OpenID Connect-compatible IdPs:
+
+- Authorization endpoint: `https://auth.mergeguide.ai/oidc/authorize`
+- Token endpoint: `https://auth.mergeguide.ai/oidc/token`
+- Redirect URI: `https://portal.mergeguide.ai/auth/oidc/callback`
+- Supported flows: Authorization Code with PKCE
+
+### SCIM v2 Provisioning
+
+Available on **Enterprise** plans only. Automate user lifecycle management from your IdP:
+
+- Base URL: `https://api.mergeguide.ai/scim/v2`
+- Authentication: Bearer token (generate in **Settings > Security > SCIM**)
+- Supported operations: Create, Read, Update, Delete, Group sync
+
+### WebAuthn / FIDO2 + TOTP MFA
+
+Multi-factor authentication options available on all plans:
+
+- **WebAuthn/Passkeys** — Hardware keys (YubiKey) and platform authenticators (Face ID, Touch ID, Windows Hello)
+- **TOTP** — Time-based one-time passwords (Authy, Google Authenticator, 1Password)
+
+Configure in **Settings > Security > MFA**.
+
+---
+
+## Troubleshooting
+
+### Verify Key
+
+```bash
+# Check if key is valid
+curl -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  https://api.mergeguide.ai/v1/auth/verify
+```
+
+Response:
+
+```json
+{
+  "valid": true,
+  "key_id": "key_abc123",
+  "scopes": ["read:evaluations", "write:evaluations"],
+  "expires_at": "2024-12-31T23:59:59Z",
+  "organization": "my-org"
+}
+```
+
+### Debug Mode
+
+```bash
+# CLI debug output
+MERGEGUIDE_DEBUG=1 mergeguide check
+
+# Shows authentication details (redacted)
+```

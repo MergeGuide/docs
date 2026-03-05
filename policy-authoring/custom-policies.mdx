@@ -1,0 +1,380 @@
+---
+title: Custom Policies
+description: Creating organization-specific policies
+---
+
+# Custom Policies
+
+Create policies tailored to your organization's standards and requirements.
+
+## Creating a Custom Policy
+
+### Step 1: Define the Policy
+
+Create a YAML file in your repository:
+
+```yaml
+# policies/require-logging.yaml
+id: require-logging
+name: Require Structured Logging
+description: |
+  All API handlers must use the company logging library
+  instead of console.log for proper log aggregation.
+
+severity: warning
+enabled: true
+
+patterns:
+  - type: regex
+    value: "console\\.(log|debug|info|warn|error)\\s*\\("
+    files:
+      - "src/api/**/*.ts"
+      - "src/handlers/**/*.ts"
+    message: "Use logger instead of console in API handlers"
+
+suggestions:
+  - "Import the logger: import { logger } from '@company/logging'"
+  - "Replace console.log with logger.info"
+  - "Replace console.error with logger.error"
+
+references:
+  - url: https://wiki.company.com/logging-standards
+    title: Company Logging Standards
+```
+
+### Step 2: Register the Policy
+
+Add to `.mergeguide.yaml`:
+
+```yaml
+custom_policies:
+  - ./policies/*.yaml
+  - ./policies/**/*.yaml
+```
+
+### Step 3: Test the Policy
+
+```bash
+# Validate syntax
+mergeguide policies validate ./policies/require-logging.yaml
+
+# Test against your code
+mergeguide check --policy ./policies/require-logging.yaml
+
+# View policy details
+mergeguide policies show require-logging
+```
+
+### Step 4: Deploy
+
+Commit the policy file to your repository. It will be automatically loaded.
+
+## Real-World Examples
+
+### Require Company Imports
+
+Ensure internal packages are used:
+
+```yaml
+id: require-company-auth
+name: Use Company Auth Library
+description: External auth libraries are not approved; use @company/auth
+
+severity: error
+enabled: true
+
+patterns:
+  - type: regex
+    value: "from ['\"]passport['\"]"
+    message: "Use @company/auth instead of passport"
+
+  - type: regex
+    value: "from ['\"]jsonwebtoken['\"]"
+    message: "Use @company/auth for JWT handling"
+
+suggestions:
+  - "Import from @company/auth: import { authenticate } from '@company/auth'"
+```
+
+### Enforce API Standards
+
+Require specific response formats:
+
+```yaml
+id: api-response-format
+name: Standard API Response Format
+description: API responses must use the standard response wrapper
+
+severity: warning
+enabled: true
+
+patterns:
+  - type: regex
+    value: "res\\.json\\(\\{(?!.*success|error)"
+    files:
+      - "src/api/**/*.ts"
+    message: "API responses must use standard format with success/error field"
+
+suggestions:
+  - "Use apiResponse helper: return apiResponse.success(data)"
+  - "For errors: return apiResponse.error(message, statusCode)"
+```
+
+### Database Query Standards
+
+Enforce ORM usage:
+
+```yaml
+id: require-orm
+name: Require ORM for Database Access
+description: Direct SQL queries are not allowed; use the ORM
+
+severity: error
+enabled: true
+
+patterns:
+  - type: regex
+    value: "\\.(query|execute)\\s*\\(['\"]\\s*(SELECT|INSERT|UPDATE|DELETE)"
+    message: "Use ORM methods instead of raw SQL"
+
+  - type: ast
+    language: typescript
+    value: |
+      CallExpression[callee.property.name="raw"][arguments.0.type="Literal"]
+    message: "Avoid .raw() queries; use ORM query builder"
+
+suggestions:
+  - "Use Repository pattern: userRepository.findById(id)"
+  - "For complex queries, create a named query in the repository"
+```
+
+### React Component Standards
+
+Enforce component patterns:
+
+```yaml
+id: react-component-standards
+name: React Component Standards
+description: Enforce team React patterns
+
+severity: warning
+enabled: true
+
+patterns:
+  - type: regex
+    value: "class\\s+\\w+\\s+extends\\s+(React\\.)?Component"
+    message: "Use functional components with hooks instead of class components"
+
+  - type: regex
+    value: "useEffect\\([^,]+\\)\\s*$"
+    message: "useEffect must have a dependency array"
+
+  - type: regex
+    value: "any\\s*[;,)>]"
+    files:
+      - "src/components/**/*.tsx"
+    message: "Avoid 'any' type in component props"
+```
+
+### Git Commit Standards
+
+Enforce commit message format:
+
+```yaml
+id: commit-message-format
+name: Commit Message Format
+description: Commits must follow conventional commits format
+
+severity: error
+enabled: true
+
+patterns:
+  - type: commit-message
+    value: "^(feat|fix|docs|style|refactor|test|chore)(\\(.+\\))?: .{10,}"
+    message: "Commit must follow format: type(scope): description"
+
+suggestions:
+  - "Example: feat(auth): add OAuth2 support"
+  - "Example: fix(api): handle null response"
+  - "See https://conventionalcommits.org"
+```
+
+## Policy Organization
+
+### Directory Structure
+
+```
+policies/
+├── security/
+│   ├── no-internal-secrets.yaml
+│   └── require-auth-headers.yaml
+├── quality/
+│   ├── require-logging.yaml
+│   └── no-deprecated-apis.yaml
+├── standards/
+│   ├── naming-conventions.yaml
+│   └── file-structure.yaml
+└── team-specific/
+    ├── frontend-rules.yaml
+    └── backend-rules.yaml
+```
+
+### Loading Policies
+
+```yaml
+# .mergeguide.yaml
+custom_policies:
+  - ./policies/**/*.yaml
+
+# Or selectively:
+custom_policies:
+  - ./policies/security/*.yaml
+  - ./policies/quality/*.yaml
+```
+
+## Sharing Policies
+
+### Organization-Wide Policies
+
+Store in a shared repository:
+
+```bash
+# policies-repo/.mergeguide-policies/
+security/
+quality/
+standards/
+```
+
+Reference in projects:
+
+```yaml
+# .mergeguide.yaml
+extends:
+  - "@company/policies"  # npm package
+  # or
+  - "github:company/policies"  # GitHub repo
+```
+
+### Publishing as npm Package
+
+```json
+{
+  "name": "@company/mergeguide-policies",
+  "version": "1.0.0",
+  "files": ["policies/**/*.yaml"],
+  "mergeguide": {
+    "policies": "./policies"
+  }
+}
+```
+
+## Advanced Techniques
+
+### Conditional Policies
+
+Apply policies based on context:
+
+```yaml
+id: strict-production-checks
+name: Strict Production Checks
+enabled: true
+
+conditions:
+  branches:
+    - main
+    - release/*
+  files:
+    - "src/**"
+    - "!src/**/*.test.*"
+
+patterns:
+  - type: regex
+    value: "console\\."
+    message: "No console statements in production code"
+```
+
+### Policy Inheritance
+
+Extend built-in policies:
+
+```yaml
+id: company-secrets-policy
+extends: no-hardcoded-secrets
+
+# Add company-specific patterns
+patterns:
+  - type: regex
+    value: "COMPANY_SECRET_\\w+"
+    message: "Company secret pattern detected"
+
+# Override settings
+settings:
+  detect_aws_keys: true
+  custom_patterns:
+    - "INTERNAL_API_KEY_\\w+"
+```
+
+### Multi-Language Policies
+
+```yaml
+id: no-debug-logging
+name: No Debug Logging
+description: Remove debug logging before merge
+
+patterns:
+  - type: regex
+    value: "console\\.debug"
+    languages: [javascript, typescript]
+    message: "Remove console.debug"
+
+  - type: regex
+    value: "logging\\.debug"
+    languages: [python]
+    message: "Remove logging.debug"
+
+  - type: regex
+    value: "log\\.Debug"
+    languages: [go]
+    message: "Remove log.Debug"
+```
+
+## Testing Custom Policies
+
+### Unit Testing
+
+```bash
+# Create test file
+cat > test-policy.ts << 'EOF'
+console.log("This should trigger");
+logger.info("This should not");
+EOF
+
+# Run policy
+mergeguide check --policy ./policies/require-logging.yaml test-policy.ts
+```
+
+### Integration Testing
+
+```yaml
+# policies/require-logging.test.yaml
+policy: require-logging
+
+tests:
+  - name: "Should detect console.log"
+    code: "console.log('test');"
+    expect: violation
+
+  - name: "Should allow logger.info"
+    code: "logger.info('test');"
+    expect: pass
+
+  - name: "Should detect console.error"
+    code: "console.error('error');"
+    expect: violation
+```
+
+Run tests:
+
+```bash
+mergeguide policies test ./policies/require-logging.yaml
+```

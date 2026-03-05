@@ -1,0 +1,132 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "MergeGuide",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#1E293B",
+    "light": "#3B82F6",
+    "dark": "#1E293B"
+  },
+  "tabs": [
+    {
+      "name": "Documentation",
+      "url": "/"
+    },
+    {
+      "name": "Changelog",
+      "url": "/release-notes"
+    }
+  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "index",
+              "getting-started/quick-start",
+              "getting-started/installation",
+              "getting-started/first-check"
+            ]
+          },
+          {
+            "group": "Enforcement Layers",
+            "pages": [
+              "user-guides/vscode-extension",
+              "user-guides/mcp-server",
+              "user-guides/git-hooks",
+              "user-guides/github-app"
+            ]
+          },
+          {
+            "group": "Dashboard",
+            "pages": [
+              "user-guides/dashboard",
+              "user-guides/cli"
+            ]
+          },
+          {
+            "group": "Policy Authoring",
+            "pages": [
+              "policy-authoring/basics",
+              "policy-authoring/built-in-policies",
+              "policy-authoring/custom-policies",
+              "policy-authoring/pattern-matching",
+              "policy-authoring/yaml-reference"
+            ]
+          },
+          {
+            "group": "Compliance",
+            "pages": [
+              "compliance/overview",
+              "compliance/oscal-export",
+              "compliance/sbom-export"
+            ]
+          },
+          {
+            "group": "Enterprise",
+            "pages": [
+              "enterprise/saml-sso"
+            ]
+          },
+          {
+            "group": "CI/CD Integration",
+            "pages": [
+              "integrations/github-actions",
+              "integrations/ci-cd-patterns"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "api-reference/authentication",
+              "api-reference/endpoints",
+              "api-reference/rate-limits",
+              "api-reference/error-handling"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/common-issues",
+              "troubleshooting/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Releases",
+            "pages": [
+              "release-notes"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "topbarLinks": [
+    {
+      "name": "Dashboard",
+      "url": "https://portal.mergeguide.ai"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://portal.mergeguide.ai"
+  },
+  "footerSocials": {
+    "github": "https://github.com/MergeGuide"
+  },
+  "feedback": {
+    "thumbsRating": true
+  }
+}

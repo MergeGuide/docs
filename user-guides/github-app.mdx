@@ -1,0 +1,233 @@
+---
+title: GitHub App
+description: Automated PR checks with the MergeGuide GitHub App
+---
+
+# GitHub App
+
+The MergeGuide GitHub App automatically checks pull requests against your policies.
+
+## SCM Platform Support
+
+MergeGuide supports 4 SCM platforms natively. The GitHub App is one of four PR gate integrations:
+
+| SCM | Integration Type | PR Gate | Inline Comments |
+|-----|-----------------|---------|-----------------|
+| **GitHub** | GitHub App | Yes | Yes |
+| **GitLab** | Webhook + OAuth | Yes | Yes |
+| **Bitbucket** | OAuth App | Yes | Yes |
+| **Azure DevOps** | Azure DevOps App | Yes | Yes |
+
+This page covers GitHub setup. For other SCMs, see the dedicated setup guides.
+
+## Features
+
+- **Automatic PR Checks** - Every PR is analyzed against your policies
+- **Status Checks** - Pass/fail status on PRs
+- **Inline Comments** - Violations annotated directly in PR diff
+- **Check Runs** - Detailed results in GitHub Checks tab
+- **Branch Protection** - Require MergeGuide checks to pass before merge
+
+## Installation
+
+1. Visit [github.com/apps/mergeguide](https://github.com/apps/mergeguide)
+2. Click **Install**
+3. Select repositories to enable
+4. Authorize the app
+
+Or install from your MergeGuide dashboard:
+
+1. Go to [portal.mergeguide.ai](https://portal.mergeguide.ai)
+2. Navigate to **Settings > Integrations**
+3. Click **Connect GitHub**
+
+## Permissions
+
+The GitHub App requires these permissions:
+
+| Permission | Purpose |
+|------------|---------|
+| **Read** repository contents | Analyze code changes |
+| **Read** pull requests | Access PR metadata |
+| **Write** checks | Report check results |
+| **Write** pull request comments | Post inline comments |
+| **Read** organization members | Verify organization access |
+
+## How It Works
+
+1. Developer opens a pull request
+2. MergeGuide receives webhook notification
+3. Changed files are analyzed against policies
+4. Results are posted as:
+   - Check run (pass/fail status)
+   - PR review comments (inline annotations)
+   - Summary comment (overall results)
+
+## Configuration
+
+### Repository Settings
+
+Create `.mergeguide.yaml` in your repository:
+
+```yaml
+github:
+  # Check behavior
+  check_on: [opened, synchronize, reopened]
+
+  # Comment settings
+  comments:
+    enabled: true
+    max_inline: 50  # Max inline comments per PR
+    summary: true   # Post summary comment
+
+  # Status check settings
+  status:
+    context: "MergeGuide"
+    fail_on_warnings: false
+
+  # Branch protection
+  required_status: true
+```
+
+### Organization Settings
+
+Configure defaults for all repositories in your MergeGuide dashboard:
+
+1. Go to **Settings > GitHub Integration**
+2. Set default policies for new repositories
+3. Configure notification preferences
+
+## Check Results
+
+### Status Check
+
+The status check appears in the PR:
+
+- **Pending** - Analysis in progress
+- **Success** - All policies passed
+- **Failure** - Policy violations found
+- **Error** - Analysis failed (configuration issue)
+
+### Inline Comments
+
+Violations appear as review comments:
+
+```
+MergeGuide [no-hardcoded-secrets]
+
+Potential secret detected on this line.
+
+Suggestion: Move this value to an environment variable.
+```
+
+### Summary Comment
+
+A summary is posted with:
+
+- Total files analyzed
+- Policies checked
+- Violations by severity
+- Link to full report
+
+## Branch Protection
+
+To require MergeGuide checks:
+
+1. Go to repository **Settings > Branches**
+2. Edit branch protection rule
+3. Enable "Require status checks to pass"
+4. Search for and select "MergeGuide"
+
+## Re-running Checks
+
+Checks automatically re-run when:
+
+- New commits are pushed to the PR
+- PR is synchronized with base branch
+
+To manually re-run:
+
+1. Go to the **Checks** tab
+2. Click **Re-run** on MergeGuide check
+
+Or comment on the PR:
+
+```
+/mergeguide check
+```
+
+## Ignoring Files
+
+Exclude files from GitHub checks:
+
+```yaml
+# .mergeguide.yaml
+ignore:
+  - "**/*.generated.ts"
+  - "vendor/**"
+  - "docs/**"
+```
+
+## Troubleshooting
+
+### Checks Not Running
+
+1. Verify app is installed on repository
+2. Check `.mergeguide.yaml` is valid
+3. Ensure webhook delivery is successful (repo Settings > Webhooks)
+
+### Checks Stuck Pending
+
+1. Check MergeGuide status page
+2. Re-push a commit to trigger new check
+3. Contact support if persists
+
+### Too Many Comments
+
+Limit inline comments:
+
+```yaml
+github:
+  comments:
+    max_inline: 10
+    summarize_excess: true
+```
+
+### Rate Limiting
+
+If hitting GitHub rate limits:
+
+```yaml
+github:
+  rate_limit:
+    delay_between_comments: 1s
+    batch_comments: true
+```
+
+## Webhook Events
+
+The app listens for:
+
+| Event | Trigger |
+|-------|---------|
+| `pull_request.opened` | New PR created |
+| `pull_request.synchronize` | PR updated with new commits |
+| `pull_request.reopened` | Closed PR reopened |
+| `check_run.rerequested` | Manual re-run requested |
+| `issue_comment.created` | `/mergeguide` command |
+
+## Security
+
+- Code is analyzed but never stored
+- Webhook payloads are verified
+- API tokens are scoped per-installation
+- All communication uses HTTPS
+
+## Uninstalling
+
+1. Go to GitHub **Settings > Applications**
+2. Find MergeGuide
+3. Click **Configure**
+4. Click **Uninstall**
+
+This removes the app from all repositories and deletes associated data.

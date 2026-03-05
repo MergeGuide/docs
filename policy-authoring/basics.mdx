@@ -1,0 +1,147 @@
+---
+title: Policy Basics
+description: Introduction to writing MergeGuide policies
+---
+
+# Policy Basics
+
+Policies are rules that MergeGuide uses to analyze code changes. This guide covers the fundamentals of how policies work.
+
+## What is a Policy?
+
+A policy is a declarative rule that:
+
+1. **Identifies** specific code patterns or behaviors
+2. **Evaluates** whether those patterns are acceptable
+3. **Reports** violations with actionable feedback
+
+## Policy Structure
+
+Every policy has these components:
+
+```yaml
+id: no-hardcoded-secrets
+name: No Hardcoded Secrets
+description: Detect secrets, API keys, and credentials in code
+severity: error
+enabled: true
+
+patterns:
+  - type: regex
+    value: "(api[_-]?key|secret|password)\\s*[=:]\\s*['\"][^'\"]{8,}['\"]"
+    message: "Potential hardcoded secret detected"
+
+suggestions:
+  - "Move this value to an environment variable"
+  - "Use a secrets manager like AWS Secrets Manager or HashiCorp Vault"
+```
+
+## Core Concepts
+
+### Policy ID
+
+A unique identifier for the policy:
+
+```yaml
+id: no-sql-injection
+```
+
+- Lowercase with hyphens
+- Must be unique within your organization
+- Used in CLI commands and ignore comments
+
+### Severity Levels
+
+| Level | Meaning | Behavior |
+|-------|---------|----------|
+| `error` | Critical violation | Blocks merges/commits |
+| `warning` | Potential issue | Reported but allowed |
+| `info` | Suggestion | Informational only |
+
+### Enabled State
+
+Control whether a policy is active:
+
+```yaml
+enabled: true   # Policy runs
+enabled: false  # Policy skipped
+```
+
+### Patterns
+
+Patterns define what code to flag:
+
+```yaml
+patterns:
+  - type: regex
+    value: "eval\\s*\\("
+    message: "eval() usage detected"
+```
+
+Pattern types:
+- `regex` - Regular expression matching
+- `ast` - Abstract Syntax Tree analysis
+- `semantic` - Language-aware analysis
+
+## Your First Policy
+
+Let's create a simple policy that detects `console.log` statements:
+
+```yaml
+id: no-console-log
+name: No Console Log
+description: Prevent console.log in production code
+severity: warning
+enabled: true
+
+patterns:
+  - type: regex
+    value: "console\\.log\\s*\\("
+    message: "console.log detected"
+
+suggestions:
+  - "Remove this console.log before committing"
+  - "Use a proper logging library instead"
+
+ignore:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+```
+
+## Testing Your Policy
+
+Test policies before deploying:
+
+```bash
+# Validate policy syntax
+mergeguide policies validate ./my-policy.yaml
+
+# Test against specific file
+mergeguide check --policy ./my-policy.yaml src/file.ts
+
+# Test against sample code
+echo "console.log('test');" | mergeguide check --stdin --policy ./my-policy.yaml
+```
+
+## Policy Inheritance
+
+Policies can extend built-in policies:
+
+```yaml
+extends: no-hardcoded-secrets
+
+# Override settings
+severity: warning
+
+# Add additional patterns
+patterns:
+  - type: regex
+    value: "my_company_key_\\w+"
+```
+
+## Next Steps
+
+- [YAML Reference](/policy-authoring/yaml-reference) - Complete configuration options
+- [Pattern Matching](/policy-authoring/pattern-matching) - Advanced pattern techniques
+- [Built-in Policies](/policy-authoring/built-in-policies) - Available default policies
+- [Custom Policies](/policy-authoring/custom-policies) - Create organization-specific rules

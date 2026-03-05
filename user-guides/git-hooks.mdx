@@ -1,0 +1,226 @@
+---
+title: Git Hooks
+description: Automatic policy checks with Git hooks
+---
+
+# Git Hooks
+
+Automatically check code against policies before commits and pushes.
+
+## Quick Setup
+
+Install MergeGuide git hooks in your repository:
+
+```bash
+mergeguide hooks install
+```
+
+This creates a pre-commit hook that runs `mergeguide check` on staged changes.
+
+## Hook Types
+
+### Pre-commit Hook
+
+Runs before each commit, checking staged changes.
+
+```bash
+# Install pre-commit hook only
+mergeguide hooks install --pre-commit
+```
+
+Behavior:
+- Checks only staged files
+- Blocks commit if any policy fails
+- Shows warnings but allows commit
+- Runs quickly (typically < 5 seconds)
+
+### Pre-push Hook
+
+Runs before pushing, checking all commits being pushed.
+
+```bash
+# Install pre-push hook only
+mergeguide hooks install --pre-push
+```
+
+Behavior:
+- Checks all commits in push range
+- More thorough than pre-commit
+- Good for catching issues missed locally
+
+### Commit-msg Hook
+
+Validates commit message format.
+
+```bash
+# Install commit-msg hook
+mergeguide hooks install --commit-msg
+```
+
+Configurable rules:
+- Minimum/maximum length
+- Required prefixes (e.g., ticket numbers)
+- Conventional commits format
+
+## Configuration
+
+### Basic Configuration
+
+In `.mergeguide.yaml`:
+
+```yaml
+hooks:
+  pre-commit:
+    enabled: true
+    strict: false  # Allow warnings
+    timeout: 30s
+
+  pre-push:
+    enabled: true
+    strict: true   # Block on warnings too
+
+  commit-msg:
+    enabled: true
+    pattern: "^(feat|fix|docs|chore): .+"
+    min_length: 10
+    max_length: 72
+```
+
+### Skip Hooks Temporarily
+
+```bash
+# Skip pre-commit hook for this commit
+git commit --no-verify -m "WIP: work in progress"
+
+# Skip all hooks
+MERGEGUIDE_SKIP_HOOKS=1 git commit -m "emergency fix"
+```
+
+### Skip Specific Policies
+
+```bash
+# Skip specific policy for this commit
+MERGEGUIDE_SKIP=no-console git commit -m "debug: adding logging"
+```
+
+## Integration with Husky
+
+If you're already using [Husky](https://typicode.github.io/husky/), add MergeGuide to your hooks:
+
+```bash
+# .husky/pre-commit
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx mergeguide check --staged
+```
+
+## Integration with lint-staged
+
+Use with [lint-staged](https://github.com/okonet/lint-staged) for faster checks:
+
+```json
+{
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "mergeguide check"
+    ]
+  }
+}
+```
+
+## Integration with pre-commit Framework
+
+For the [pre-commit](https://pre-commit.com/) framework, add to `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: mergeguide
+        name: MergeGuide Policy Check
+        entry: mergeguide check --staged
+        language: system
+        pass_filenames: false
+        stages: [commit]
+```
+
+## Team Setup
+
+### Automatic Installation
+
+Add to `package.json` for automatic setup:
+
+```json
+{
+  "scripts": {
+    "prepare": "mergeguide hooks install"
+  }
+}
+```
+
+### Shared Configuration
+
+Commit `.mergeguide.yaml` to your repository so all team members use the same settings.
+
+## Troubleshooting
+
+### Hook Not Running
+
+Verify hook is installed:
+
+```bash
+ls -la .git/hooks/pre-commit
+cat .git/hooks/pre-commit
+```
+
+Check hook is executable:
+
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+### Hook Takes Too Long
+
+Optimize with caching:
+
+```yaml
+hooks:
+  pre-commit:
+    cache: true
+    timeout: 60s
+```
+
+Or check only staged files:
+
+```bash
+mergeguide check --staged --quick
+```
+
+### Conflicts with Other Hooks
+
+MergeGuide hooks are designed to work alongside other hooks. If conflicts occur:
+
+1. Use a hook manager (Husky, pre-commit framework)
+2. Chain hooks manually in a single script
+
+### Bypassing for Emergencies
+
+In genuine emergencies:
+
+```bash
+git commit --no-verify -m "EMERGENCY: fixing production outage"
+```
+
+**Note:** Emergency bypasses are logged and should be reviewed.
+
+## Uninstalling
+
+```bash
+# Remove MergeGuide hooks
+mergeguide hooks uninstall
+
+# Or manually
+rm .git/hooks/pre-commit
+rm .git/hooks/pre-push
+```

@@ -1,0 +1,76 @@
+---
+title: Introduction
+description: MergeGuide documentation - AI-native code governance with enterprise compliance
+---
+
+# MergeGuide Documentation
+
+MergeGuide enforces code policies across your development workflow. Every commit and pull request runs through 711 detection rules across 15 languages. Security findings appear where developers work — VS Code, Git, GitHub, GitLab, Bitbucket, Azure DevOps.
+
+## How It Works
+
+**Real-time feedback (IDE)** — VS Code extension catches violations as you type.
+
+**Git-level enforcement** — Pre-commit hooks block policy violations before they ever reach a PR.
+
+**PR gate (all 4 SCM platforms)** — Evaluation results post inline on every pull request. Violations are flagged with remediation guidance.
+
+**Compliance export** — Evidence flows to your auditor as NIST OSCAL v1.1.2 or SBOM (CycloneDX / SPDX).
+
+## Enforcement Layers
+
+| Where | Tool | When |
+|-------|------|------|
+| Code editor | VS Code Extension | As you type |
+| AI assistants | MCP Server | Code generation |
+| Local commits | Git hooks | Pre-commit, pre-push |
+| Pull requests | Webhook gate | All 4 SCM platforms |
+
+## Compliance Frameworks
+
+18 total:
+
+**Security:** NIST SSDF, OWASP Top 10, OWASP ASVS L1/L2, CWE Top 25, CIS Controls, SLSA
+
+**Regulatory:** SOC 2, HIPAA, PCI-DSS, ISO 27001, GDPR, FedRAMP, StateRAMP
+
+**Emerging:** EU AI Act, DORA, NIS2, Colorado AI Act
+
+## Detection Rules
+
+- 711 total detection rules
+- 237 regex patterns (known vulnerabilities)
+- 474 Semgrep AST rules (taint analysis, data flow)
+- 15 languages: Python, JavaScript, TypeScript, Java, Go, PHP, Ruby, C#, Kotlin, Swift, Rust, C, C++, Terraform, Dockerfile
+
+## Quick Start
+
+```bash
+# Install the CLI
+npm install -g @mergeguide/cli
+
+# Authenticate
+mergeguide auth login
+
+# Run your first check
+mergeguide check
+```
+
+[Continue to Quick Start Guide →](/getting-started/quick-start)
+
+## Documentation Sections
+
+| Section | Description |
+|---------|-------------|
+| [Getting Started](/getting-started/quick-start) | Installation, first check, basics |
+| [Enforcement Layers](/user-guides/vscode-extension) | VS Code, MCP Server, Git Hooks, PR Gate |
+| [Compliance](/user-guides/dashboard) | OSCAL export, SBOM, bypass tracking, PolicyMerge |
+| [Policy Authoring](/policy-authoring/basics) | Create and customize detection policies |
+| [API Reference](/api-reference/authentication) | REST API documentation |
+| [Integrations](/integrations/github-actions) | CI/CD workflow integrations |
+| [Troubleshooting](/troubleshooting/common-issues) | Common issues and FAQ |
+
+## Getting Help
+
+- **Dashboard**: [portal.mergeguide.ai](https://portal.mergeguide.ai)
+- **Support**: [support@mergeguide.ai](mailto:support@mergeguide.ai)

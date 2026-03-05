@@ -1,0 +1,280 @@
+---
+title: FAQ
+description: Frequently asked questions about MergeGuide
+---
+
+# Frequently Asked Questions
+
+## General
+
+### What is MergeGuide?
+
+MergeGuide evaluates code against compliance frameworks. It runs policy checks in your IDE, at commit time, and on every PR — across GitHub, GitLab, Bitbucket, and Azure DevOps.
+
+### How does it work?
+
+1. Connect your SCM platform
+2. Select frameworks: SOC 2, HIPAA, PCI-DSS, ISO 27001, EU AI Act, etc.
+3. Every PR runs against 711 detection rules (237 regex + 474 Semgrep taint analysis)
+4. Violations post as inline comments on the PR
+5. Export evidence as NIST OSCAL v1.1.2 or SBOM for your auditor
+
+### Which SCM platforms are supported?
+
+GitHub, GitLab, Bitbucket, and Azure DevOps — all four with full PR gate integration, inline violation comments, and pass/fail status checks.
+
+### What languages does MergeGuide support?
+
+15 languages: Python, JavaScript, TypeScript, Java, Go, PHP, Ruby, C#, Kotlin, Swift, Rust, C, C++, Terraform, Dockerfile.
+
+### Is my code sent to the cloud?
+
+Code diffs are sent to MergeGuide's API for analysis. Code is not stored after analysis completes. All transmission uses TLS. MergeGuide is SOC 2 Type II certified.
+
+### Can I use MergeGuide offline?
+
+The CLI supports offline mode for policy checks:
+
+```bash
+# Sync policies for offline use
+mergeguide policies sync
+
+# Run checks offline
+mergeguide check --offline
+```
+
+Offline mode uses cached policies and does not report to the dashboard.
+
+---
+
+## Pricing & Plans
+
+### What plans does MergeGuide offer?
+
+| Plan | Price | Seat Min | Included Frameworks |
+|------|-------|----------|-------------------|
+| Free | $0 | — | OWASP Top 10, CWE Top 25 |
+| Pro | $29/seat/mo | — | + NIST SSDF, OWASP ASVS L1, CIS Controls, PCI-DSS |
+| Team | $39/seat/mo | 5 seats | + SOC 2, HIPAA, EU AI Act, GDPR, OWASP ASVS L2, PolicyMerge, SBOM, OSCAL |
+| Business | $79/seat/mo | 10 seats | + DORA, ISO 27001:2022, NIST SP 800-53, FedRAMP, StateRAMP, SAML/OIDC SSO, SCIM, RBAC, dedicated CSM |
+| Enterprise | Custom | — | + NIS2, Colorado AI Act, custom detection rules, government tenant |
+
+Annual billing available with 20% discount.
+
+### What does the Free plan include?
+
+Free gives individual developers access to:
+- CLI, VS Code extension, MCP server, git hooks, and PR Gate
+- OWASP Top 10 and CWE Top 25 framework templates
+- 1 connected repository
+- 50 evaluations per month
+- Community support
+
+### How do I upgrade my plan?
+
+1. Go to [portal.mergeguide.ai](https://portal.mergeguide.ai)
+2. Navigate to **Settings > Billing**
+3. Select your plan
+4. Complete payment
+
+---
+
+## Compliance
+
+### Which compliance frameworks does MergeGuide support?
+
+18 frameworks:
+
+**Security:** NIST SSDF, OWASP Top 10, OWASP ASVS L1, OWASP ASVS L2, CWE Top 25, CIS Controls, SLSA
+
+**Regulatory:** SOC 2, HIPAA, PCI-DSS, ISO 27001, GDPR, FedRAMP, StateRAMP
+
+**Emerging:** EU AI Act, DORA, NIS2, Colorado AI Act
+
+### Can I export compliance evidence for my auditor?
+
+Yes, on Team plan and above. MergeGuide exports compliance posture as NIST OSCAL v1.1.2 — the machine-readable standard used by FedRAMP and major GRC platforms. Import the output directly into Drata, Vanta, Secureframe, Tugboat Logic, or any OSCAL-compatible tool.
+
+From the dashboard: **Compliance > Export > OSCAL**.
+
+Or via API:
+
+```bash
+curl -X POST https://api.mergeguide.ai/v1/compliance/reports \
+  -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  -d '{"frameworks": ["soc2"], "format": "oscal"}'
+```
+
+**Business plan** additionally supports OSCAL webhooks for automated GRC platform delivery.
+
+### Is MergeGuide SOC 2 compliant?
+
+Yes. MergeGuide is SOC 2 Type II certified. Contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai) for the audit report.
+
+### Can I generate SBOMs?
+
+Yes, on Team plan and above. MergeGuide generates SBOMs in CycloneDX 1.5 and SPDX 2.3 formats. Available from the dashboard under **SBOM** or via the MCP server's `generate_sbom` tool.
+
+### What is bypass rate tracking?
+
+Every policy override — when a developer pushes code past a failing check — is logged and surfaced in the compliance dashboard. Bypass rate is a governance signal used as evidence for SOC 2 CC6.1 controls. Available on all plans.
+
+---
+
+## Policies
+
+### What policies are included?
+
+Built-in policies cover:
+- Security: hardcoded secrets, SQL injection, XSS, eval, command injection
+- Code quality: console statements, debugger statements, missing error handling
+- Configuration: debug config, HTTP URLs, CORS wildcards
+
+See [Built-in Policies](/policy-authoring/built-in-policies) for the full list.
+
+### Can I create custom policies?
+
+Yes. Custom policies are defined in YAML:
+
+```yaml
+id: my-custom-policy
+name: My Custom Policy
+patterns:
+  - type: regex
+    value: "MY_PATTERN"
+    message: "Custom violation"
+```
+
+See [Custom Policies](/policy-authoring/custom-policies) for details.
+
+### Can I disable specific policies?
+
+Yes, in `.mergeguide.yaml`:
+
+```yaml
+policies:
+  no-console-in-production:
+    enabled: false
+```
+
+### How do I ignore false positives?
+
+**Per-line:**
+```typescript
+console.log("Debug"); // mergeguide-ignore-line
+```
+
+**Per-block:**
+```typescript
+// mergeguide-disable no-console
+console.log("One");
+console.log("Two");
+// mergeguide-enable no-console
+```
+
+**Per-file pattern in `.mergeguide.yaml`:**
+```yaml
+ignore:
+  - "**/*.test.ts"
+```
+
+---
+
+## Integration
+
+### Which CI/CD platforms are supported?
+
+MergeGuide works with any CI/CD platform that can run Node.js. The MergeGuide CLI and GitHub Action are tested with:
+- GitHub Actions
+- GitLab CI
+- Jenkins
+- CircleCI
+- Azure DevOps Pipelines
+- Bitbucket Pipelines
+
+Note: GitHub, GitLab, Bitbucket, and Azure DevOps also have native SCM integrations (PR gate) separate from CI/CD runner integration.
+
+### Does MergeGuide work with monorepos?
+
+Yes. Configure per-package:
+
+```yaml
+# packages/frontend/.mergeguide.yaml
+policies:
+  react-specific-rules:
+    enabled: true
+
+# packages/backend/.mergeguide.yaml
+policies:
+  backend-specific-rules:
+    enabled: true
+```
+
+### What MCP tools are available?
+
+The MCP server exposes 10 tools: `check_policy`, `list_policies`, `scan_repository`, `scan_vulnerabilities`, `scan_licenses`, `scan_cicd`, `scan_iac`, `generate_evidence`, `generate_sbom`, `get_remediation`.
+
+See [MCP Server](/user-guides/mcp-server) for details.
+
+---
+
+## Enterprise Authentication
+
+### What authentication methods are supported?
+
+- **API key** — All plans
+- **OAuth 2.0** — All plans
+- **SAML 2.0 SSO** — Business and Enterprise
+- **OIDC / OAuth 2.0 + PKCE** — Business and Enterprise
+- **SCIM v2 provisioning** — Enterprise only
+- **WebAuthn / Passkeys** — All plans
+- **TOTP MFA** — All plans
+
+### How do I set up SAML SSO?
+
+See the [SAML Setup Guide](/enterprise/saml-sso). Supported IdPs include Okta, Azure AD, Google Workspace, and any SAML 2.0-compliant provider.
+
+---
+
+## Security
+
+### How is my API key protected?
+
+- Keys are hashed before storage
+- All API communication uses TLS
+- Keys are scoped to specific permissions
+- Keys can be set to expire
+- IP allowlisting available
+
+### How do I rotate API keys?
+
+1. Generate a new key in the dashboard
+2. Update the key in your CI/CD secrets
+3. Verify the new key works
+4. Revoke the old key
+
+```bash
+# Generate new
+mergeguide auth create-key --name "New Key"
+
+# Revoke old
+mergeguide auth revoke-key --key-id old_key_id
+```
+
+---
+
+## Support
+
+### How do I get help?
+
+- **Documentation:** docs.mergeguide.ai
+- **Email:** support@mergeguide.ai
+- **Enterprise:** Dedicated support channel in your plan
+
+### How do I report a bug?
+
+Email [support@mergeguide.ai](mailto:support@mergeguide.ai) with:
+- CLI version (`mergeguide --version`)
+- Operating system
+- Steps to reproduce
+- Error message and stack trace

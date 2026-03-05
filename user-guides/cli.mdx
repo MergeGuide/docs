@@ -1,0 +1,237 @@
+---
+title: CLI Reference
+description: Complete reference for the MergeGuide command-line interface
+---
+
+# CLI Reference
+
+The MergeGuide CLI provides policy checking, management, and integration capabilities.
+
+## Installation
+
+```bash
+npm install -g @mergeguide/cli
+```
+
+## Commands
+
+### `mergeguide check`
+
+Analyze code changes against policies.
+
+```bash
+# Check staged changes (default)
+mergeguide check
+
+# Check specific files
+mergeguide check src/api/*.ts
+
+# Check a commit range
+mergeguide check --range HEAD~3..HEAD
+
+# Check with verbose output
+mergeguide check --verbose
+
+# Output as JSON
+mergeguide check --format json
+
+# Fail only on errors (ignore warnings)
+mergeguide check --strict
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--staged` | Check staged changes only (default) |
+| `--all` | Check all uncommitted changes |
+| `--range <range>` | Check specific commit range |
+| `--format <fmt>` | Output format: `text`, `json`, `sarif` |
+| `--verbose` | Show detailed violation info |
+| `--strict` | Exit 1 only on failures, not warnings |
+| `--offline` | Use cached policies (no network) |
+
+### `mergeguide auth`
+
+Manage authentication.
+
+```bash
+# Login via browser
+mergeguide auth login
+
+# Login with API key
+mergeguide auth login --api-key <key>
+
+# Check auth status
+mergeguide auth status
+
+# Logout
+mergeguide auth logout
+```
+
+### `mergeguide policies`
+
+Manage and inspect policies.
+
+```bash
+# List available policies
+mergeguide policies list
+
+# Show policy details
+mergeguide policies show <policy-id>
+
+# Sync policies for offline use
+mergeguide policies sync
+
+# Validate local policy file
+mergeguide policies validate ./my-policy.yaml
+```
+
+### `mergeguide config`
+
+Manage configuration.
+
+```bash
+# Show current config
+mergeguide config show
+
+# Set organization
+mergeguide config set org <org-id>
+
+# Set default output format
+mergeguide config set format json
+
+# Initialize project config
+mergeguide config init
+```
+
+### `mergeguide hooks`
+
+Manage Git hooks.
+
+```bash
+# Install pre-commit hook
+mergeguide hooks install
+
+# Uninstall hooks
+mergeguide hooks uninstall
+
+# Test hook without committing
+mergeguide hooks test
+```
+
+## Configuration File
+
+Create `.mergeguide.yaml` in your repository root:
+
+```yaml
+# Organization (optional - uses default from auth)
+org: my-org
+
+# Policy overrides
+policies:
+  no-hardcoded-secrets:
+    enabled: true
+    severity: error
+  no-console-in-production:
+    enabled: true
+    severity: warning
+
+# File patterns to ignore
+ignore:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "node_modules/**"
+  - "dist/**"
+  - ".git/**"
+
+# Custom policy paths
+custom_policies:
+  - ./policies/*.yaml
+
+# Check behavior
+check:
+  fail_on_warnings: false
+  max_file_size: 1MB
+```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `MERGEGUIDE_API_KEY` | API key for authentication |
+| `MERGEGUIDE_ORG` | Default organization ID |
+| `MERGEGUIDE_API_URL` | Custom API endpoint |
+| `MERGEGUIDE_CONFIG` | Path to config file |
+| `MERGEGUIDE_OFFLINE` | Enable offline mode |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success (all checks passed) |
+| 1 | Failure (policy violations found) |
+| 2 | Error (configuration/network issue) |
+
+## Examples
+
+### CI/CD Integration
+
+```bash
+# GitHub Actions
+- name: MergeGuide Check
+  run: |
+    npm install -g @mergeguide/cli
+    mergeguide check --format sarif > results.sarif
+
+# GitLab CI
+mergeguide-check:
+  script:
+    - npm install -g @mergeguide/cli
+    - mergeguide check --strict
+```
+
+### Pre-commit Hook
+
+```bash
+#!/bin/sh
+mergeguide check --staged
+```
+
+### JSON Output Processing
+
+```bash
+# Check and process with jq
+mergeguide check --format json | jq '.violations[] | select(.severity == "error")'
+```
+
+## Troubleshooting
+
+### Authentication Issues
+
+```bash
+# Clear cached credentials
+mergeguide auth logout
+rm -rf ~/.mergeguide/credentials
+
+# Re-authenticate
+mergeguide auth login
+```
+
+### Network Issues
+
+```bash
+# Check connectivity
+mergeguide auth status
+
+# Use offline mode
+mergeguide policies sync
+mergeguide check --offline
+```
+
+### Debug Mode
+
+```bash
+# Enable debug logging
+MERGEGUIDE_DEBUG=1 mergeguide check
+```

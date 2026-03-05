@@ -1,0 +1,358 @@
+---
+title: Error Handling
+description: API error codes and handling strategies
+---
+
+# Error Handling
+
+MergeGuide API uses standard HTTP status codes and provides detailed error responses.
+
+## Error Response Format
+
+All errors return a consistent JSON structure:
+
+```json
+{
+  "error": "error_type",
+  "message": "Human-readable error message",
+  "code": "SPECIFIC_ERROR_CODE",
+  "details": {
+    "field": "Additional context"
+  },
+  "request_id": "req_abc123"
+}
+```
+
+## HTTP Status Codes
+
+| Code | Meaning |
+|------|---------|
+| 200 | Success |
+| 201 | Created |
+| 204 | No Content (successful deletion) |
+| 400 | Bad Request - Invalid input |
+| 401 | Unauthorized - Authentication required |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource doesn't exist |
+| 409 | Conflict - Resource already exists |
+| 422 | Unprocessable Entity - Validation failed |
+| 429 | Too Many Requests - Rate limited |
+| 500 | Internal Server Error |
+| 503 | Service Unavailable |
+
+## Error Types
+
+### Authentication Errors (401)
+
+```json
+{
+  "error": "unauthorized",
+  "message": "Invalid or expired API key",
+  "code": "AUTH_INVALID_KEY"
+}
+```
+
+| Code | Description |
+|------|-------------|
+| `AUTH_MISSING_KEY` | No API key provided |
+| `AUTH_INVALID_KEY` | Key format is invalid |
+| `AUTH_EXPIRED_KEY` | Key has expired |
+| `AUTH_REVOKED_KEY` | Key was revoked |
+
+### Permission Errors (403)
+
+```json
+{
+  "error": "forbidden",
+  "message": "Insufficient permissions for this operation",
+  "code": "AUTH_INSUFFICIENT_SCOPE",
+  "details": {
+    "required_scope": "write:policies",
+    "current_scopes": ["read:policies"]
+  }
+}
+```
+
+| Code | Description |
+|------|-------------|
+| `AUTH_INSUFFICIENT_SCOPE` | Key lacks required scope |
+| `AUTH_IP_NOT_ALLOWED` | IP not in allowlist |
+| `AUTH_ORG_ACCESS_DENIED` | Not a member of organization |
+
+### Validation Errors (400, 422)
+
+```json
+{
+  "error": "validation_error",
+  "message": "Request validation failed",
+  "code": "VALIDATION_FAILED",
+  "details": {
+    "errors": [
+      {
+        "field": "repository",
+        "message": "Repository name is required",
+        "code": "REQUIRED"
+      },
+      {
+        "field": "files[0].content",
+        "message": "File content exceeds maximum size",
+        "code": "MAX_SIZE_EXCEEDED",
+        "max": 1048576
+      }
+    ]
+  }
+}
+```
+
+| Code | Description |
+|------|-------------|
+| `REQUIRED` | Field is required |
+| `INVALID_FORMAT` | Value format is invalid |
+| `MAX_SIZE_EXCEEDED` | Value exceeds maximum |
+| `MIN_SIZE_REQUIRED` | Value below minimum |
+| `INVALID_ENUM` | Value not in allowed list |
+
+### Resource Errors (404, 409)
+
+```json
+{
+  "error": "not_found",
+  "message": "Evaluation not found",
+  "code": "RESOURCE_NOT_FOUND",
+  "details": {
+    "resource_type": "evaluation",
+    "resource_id": "eval_abc123"
+  }
+}
+```
+
+| Code | Description |
+|------|-------------|
+| `RESOURCE_NOT_FOUND` | Resource doesn't exist |
+| `RESOURCE_ALREADY_EXISTS` | Duplicate resource |
+| `RESOURCE_DELETED` | Resource was deleted |
+
+### Rate Limit Errors (429)
+
+```json
+{
+  "error": "rate_limited",
+  "message": "Rate limit exceeded",
+  "code": "RATE_LIMIT_EXCEEDED",
+  "details": {
+    "limit": 100,
+    "window": "1m",
+    "retry_after": 45
+  }
+}
+```
+
+Headers included:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1705311600
+Retry-After: 45
+```
+
+### Server Errors (500, 503)
+
+```json
+{
+  "error": "internal_error",
+  "message": "An unexpected error occurred",
+  "code": "INTERNAL_ERROR",
+  "request_id": "req_abc123"
+}
+```
+
+| Code | Description |
+|------|-------------|
+| `INTERNAL_ERROR` | Unexpected server error |
+| `SERVICE_UNAVAILABLE` | Service temporarily down |
+| `DEPENDENCY_FAILURE` | External service failed |
+
+## Handling Errors
+
+### JavaScript/TypeScript
+
+```typescript
+import { MergeGuideClient, MergeGuideError } from '@mergeguide/sdk';
+
+const client = new MergeGuideClient({ apiKey: process.env.MERGEGUIDE_API_KEY });
+
+try {
+  const evaluation = await client.evaluations.create({
+    repository: 'owner/repo',
+    files: [...]
+  });
+} catch (error) {
+  if (error instanceof MergeGuideError) {
+    switch (error.code) {
+      case 'AUTH_INVALID_KEY':
+        console.error('Invalid API key, please check configuration');
+        break;
+      case 'RATE_LIMIT_EXCEEDED':
+        const retryAfter = error.details.retry_after;
+        console.log(`Rate limited, retrying in ${retryAfter}s`);
+        await sleep(retryAfter * 1000);
+        // Retry request
+        break;
+      case 'VALIDATION_FAILED':
+        console.error('Validation errors:', error.details.errors);
+        break;
+      default:
+        console.error(`API error: ${error.message}`);
+    }
+  } else {
+    // Network or other error
+    throw error;
+  }
+}
+```
+
+### Python
+
+```python
+from mergeguide import MergeGuideClient, MergeGuideError
+import time
+
+client = MergeGuideClient(api_key=os.environ['MERGEGUIDE_API_KEY'])
+
+try:
+    evaluation = client.evaluations.create(
+        repository='owner/repo',
+        files=[...]
+    )
+except MergeGuideError as e:
+    if e.code == 'AUTH_INVALID_KEY':
+        print('Invalid API key')
+    elif e.code == 'RATE_LIMIT_EXCEEDED':
+        retry_after = e.details.get('retry_after', 60)
+        time.sleep(retry_after)
+        # Retry request
+    elif e.code == 'VALIDATION_FAILED':
+        for err in e.details.get('errors', []):
+            print(f"Field {err['field']}: {err['message']}")
+    else:
+        raise
+```
+
+### cURL/Shell
+
+```bash
+response=$(curl -s -w "\n%{http_code}" \
+  -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  https://api.mergeguide.ai/v1/evaluations/eval_abc123)
+
+http_code=$(echo "$response" | tail -n1)
+body=$(echo "$response" | sed '$d')
+
+case $http_code in
+  200)
+    echo "Success: $body"
+    ;;
+  401)
+    echo "Authentication failed"
+    exit 1
+    ;;
+  429)
+    retry_after=$(echo "$body" | jq -r '.details.retry_after')
+    echo "Rate limited, waiting ${retry_after}s"
+    sleep $retry_after
+    # Retry
+    ;;
+  *)
+    echo "Error $http_code: $(echo "$body" | jq -r '.message')"
+    exit 1
+    ;;
+esac
+```
+
+## Retry Strategy
+
+### Recommended Retry Logic
+
+```typescript
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      if (error instanceof MergeGuideError) {
+        // Don't retry client errors
+        if (error.status >= 400 && error.status < 500) {
+          throw error;
+        }
+
+        // Handle rate limiting
+        if (error.code === 'RATE_LIMIT_EXCEEDED') {
+          const retryAfter = error.details.retry_after || 60;
+          await sleep(retryAfter * 1000);
+          continue;
+        }
+      }
+
+      // Exponential backoff for server errors
+      const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+      await sleep(delay);
+    }
+  }
+
+  throw lastError;
+}
+```
+
+### Retryable Errors
+
+| Code | Retryable | Strategy |
+|------|-----------|----------|
+| 429 | Yes | Use `Retry-After` header |
+| 500 | Yes | Exponential backoff |
+| 503 | Yes | Exponential backoff |
+| 400 | No | Fix request |
+| 401 | No | Check credentials |
+| 403 | No | Check permissions |
+| 404 | No | Check resource ID |
+
+## Debugging
+
+### Request ID
+
+Every response includes a `request_id`. Include this when contacting support:
+
+```json
+{
+  "error": "internal_error",
+  "message": "An unexpected error occurred",
+  "request_id": "req_abc123def456"
+}
+```
+
+### Debug Mode
+
+Enable verbose logging in SDKs:
+
+```typescript
+const client = new MergeGuideClient({
+  apiKey: process.env.MERGEGUIDE_API_KEY,
+  debug: true  // Logs requests and responses
+});
+```
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| Intermittent 401 | Check key expiration, rotate keys |
+| Consistent 403 | Verify key scopes match operation |
+| 422 on create | Check all required fields present |
+| 429 frequently | Implement request batching |

@@ -1,0 +1,106 @@
+---
+title: SAML 2.0 SSO
+description: Configure SAML 2.0 single sign-on for your organization
+---
+
+# SAML 2.0 SSO
+
+SAML 2.0 SSO is available on Business and Enterprise plans. Connect your identity provider (IdP) so members sign in with their organizational credentials.
+
+## Supported Identity Providers
+
+- Okta
+- Microsoft Azure Active Directory (Entra ID)
+- Google Workspace
+- OneLogin
+- Ping Identity
+- Any SAML 2.0-compliant IdP
+
+## Setup
+
+### Step 1: Start SAML Configuration in MergeGuide
+
+1. Go to **Settings > Security > Single Sign-On**
+2. Click **Configure SAML**
+3. Download the MergeGuide Service Provider (SP) metadata file
+
+The SP metadata contains:
+- Entity ID: `https://portal.mergeguide.ai/saml/metadata`
+- ACS URL: `https://portal.mergeguide.ai/saml/acs`
+- Certificate for signature verification
+
+### Step 2: Configure Your IdP
+
+Using the SP metadata, create a new application/integration in your IdP.
+
+**Required attribute mappings:**
+
+| SAML Attribute | MergeGuide Field |
+|----------------|-----------------|
+| `email` or `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress` | Email (required) |
+| `firstName` or `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname` | First name |
+| `lastName` or `http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname` | Last name |
+
+**Optional role mapping** (maps IdP groups to MergeGuide roles):
+
+| IdP Group Attribute | MergeGuide Role |
+|--------------------|-----------------|
+| `mergeguide_admin` | Admin |
+| `mergeguide_developer` | Developer |
+| `mergeguide_viewer` | Viewer |
+
+If no role attribute is present, new SSO users are provisioned as Viewers by default.
+
+### Step 3: Complete Configuration in MergeGuide
+
+1. Copy the IdP metadata URL or upload the IdP metadata XML
+2. Enter the IdP Entity ID
+3. Enter the SSO URL (SAML endpoint from your IdP)
+4. Upload or paste the IdP signing certificate
+5. Click **Save Configuration**
+
+### Step 4: Test the Connection
+
+1. Click **Test SSO** — this opens a test login in a new window without affecting your current session
+2. Complete the IdP authentication flow
+3. Verify the test user attributes are parsed correctly
+4. Click **Enable SSO**
+
+## Enforcement Options
+
+Once SSO is enabled, choose an enforcement level:
+
+| Mode | Behavior |
+|------|---------|
+| **Optional** | Members can sign in with SSO or email/password |
+| **Required** | All members must use SSO; email/password login is disabled |
+
+Enable required SSO from **Settings > Security > SSO > Enforcement**.
+
+## Just-in-Time Provisioning
+
+When a user signs in via SAML for the first time, MergeGuide automatically creates their account. The user is assigned the default role (Viewer) unless your IdP sends role attributes.
+
+To disable JIT provisioning and require manual account creation, contact support.
+
+## SCIM Integration
+
+For automatic user lifecycle management (provisioning, de-provisioning, group sync), configure SCIM v2 alongside SAML. See [SCIM Provisioning](/enterprise/scim-provisioning).
+
+## Troubleshooting
+
+### "SAML Response Invalid"
+
+1. Verify the ACS URL in your IdP matches `https://portal.mergeguide.ai/saml/acs`
+2. Check that the IdP certificate hasn't expired
+3. Confirm time synchronization between IdP and MergeGuide (SAML assertions expire quickly)
+
+### "User Not Provisioned"
+
+1. Verify the email attribute is mapped in your IdP configuration
+2. Check that the email domain matches your organization's registered domain
+3. If JIT provisioning is disabled, create the user manually first
+
+### "AttributeStatement Missing"
+
+Ensure your IdP is configured to send the email attribute in the SAML assertion. This is required.

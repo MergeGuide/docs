@@ -1,0 +1,299 @@
+---
+title: Rate Limits
+description: API rate limits and best practices
+---
+
+# Rate Limits
+
+MergeGuide API enforces rate limits to ensure fair usage and service stability.
+
+## Rate Limit Tiers
+
+| Plan | Requests/Minute | Requests/Hour | Requests/Day |
+|------|-----------------|---------------|--------------|
+| Free | 20 | 200 | 1,000 |
+| Pro | 60 | 1,000 | 10,000 |
+| Team | 100 | 2,000 | 20,000 |
+| Business | 300 | 6,000 | 60,000 |
+| Enterprise | 500 | 10,000 | 100,000 |
+| Custom | Contact sales | Contact sales | Contact sales |
+
+## Endpoint-Specific Limits
+
+Some endpoints have additional limits:
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /evaluations` | 60 | per minute |
+| `POST /compliance/reports` | 10 | per hour |
+| `GET /evaluations` | 100 | per minute |
+| Other read endpoints | 200 | per minute |
+
+## Rate Limit Headers
+
+Every response includes rate limit information:
+
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1705311600
+X-RateLimit-Window: 60
+```
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Max requests in window |
+| `X-RateLimit-Remaining` | Requests remaining |
+| `X-RateLimit-Reset` | Unix timestamp when limit resets |
+| `X-RateLimit-Window` | Window size in seconds |
+
+## Rate Limit Exceeded
+
+When rate limited, the API returns:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 45
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1705311645
+
+{
+  "error": "rate_limited",
+  "message": "Rate limit exceeded. Please retry after 45 seconds.",
+  "code": "RATE_LIMIT_EXCEEDED",
+  "details": {
+    "limit": 100,
+    "window": "1m",
+    "retry_after": 45
+  }
+}
+```
+
+## Handling Rate Limits
+
+### Respect Retry-After
+
+Always use the `Retry-After` header:
+
+```typescript
+async function makeRequest(url: string): Promise<Response> {
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${apiKey}` }
+  });
+
+  if (response.status === 429) {
+    const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
+    await sleep(retryAfter * 1000);
+    return makeRequest(url);  // Retry
+  }
+
+  return response;
+}
+```
+
+### Implement Exponential Backoff
+
+For robustness, combine with exponential backoff:
+
+```typescript
+async function makeRequestWithBackoff(
+  url: string,
+  maxRetries = 5
+): Promise<Response> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiKey}` }
+    });
+
+    if (response.status === 429) {
+      const retryAfter = parseInt(
+        response.headers.get('Retry-After') ||
+        String(Math.pow(2, attempt))
+      );
+      const jitter = Math.random() * 1000;
+      await sleep(retryAfter * 1000 + jitter);
+      continue;
+    }
+
+    return response;
+  }
+
+  throw new Error('Max retries exceeded');
+}
+```
+
+### Pre-emptive Rate Limiting
+
+Track remaining requests and throttle proactively:
+
+```typescript
+class RateLimitedClient {
+  private remaining = 100;
+  private resetTime = Date.now();
+
+  async request(url: string): Promise<Response> {
+    // Wait if approaching limit
+    if (this.remaining <= 5) {
+      const waitTime = this.resetTime - Date.now();
+      if (waitTime > 0) {
+        await sleep(waitTime);
+      }
+    }
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiKey}` }
+    });
+
+    // Update tracking from headers
+    this.remaining = parseInt(
+      response.headers.get('X-RateLimit-Remaining') || '100'
+    );
+    this.resetTime = parseInt(
+      response.headers.get('X-RateLimit-Reset') || '0'
+    ) * 1000;
+
+    return response;
+  }
+}
+```
+
+## Best Practices
+
+### Batch Requests
+
+Instead of multiple single requests:
+
+```typescript
+// Bad: 10 separate requests
+for (const file of files) {
+  await client.evaluations.create({ files: [file] });
+}
+
+// Good: 1 batched request
+await client.evaluations.create({ files: files });
+```
+
+### Cache Responses
+
+Cache read operations:
+
+```typescript
+const cache = new Map();
+
+async function getPolicies(): Promise<Policy[]> {
+  const cacheKey = 'policies';
+  const cached = cache.get(cacheKey);
+
+  if (cached && cached.expires > Date.now()) {
+    return cached.data;
+  }
+
+  const policies = await client.policies.list();
+
+  cache.set(cacheKey, {
+    data: policies,
+    expires: Date.now() + 5 * 60 * 1000  // 5 minute cache
+  });
+
+  return policies;
+}
+```
+
+### Use Webhooks
+
+For status updates, use webhooks instead of polling:
+
+```typescript
+// Bad: Polling every 5 seconds
+while (evaluation.status === 'pending') {
+  await sleep(5000);
+  evaluation = await client.evaluations.get(evaluationId);
+}
+
+// Good: Webhook notification
+// Configure webhook at /webhooks
+// Handle POST /your-webhook-endpoint
+app.post('/your-webhook-endpoint', (req, res) => {
+  const { event, data } = req.body;
+  if (event === 'evaluation.completed') {
+    processEvaluation(data);
+  }
+  res.sendStatus(200);
+});
+```
+
+### Spread Requests Over Time
+
+Avoid bursts by spreading requests:
+
+```typescript
+async function processItems(items: Item[]): Promise<void> {
+  const REQUESTS_PER_SECOND = 1;
+  const INTERVAL = 1000 / REQUESTS_PER_SECOND;
+
+  for (const item of items) {
+    await processItem(item);
+    await sleep(INTERVAL);
+  }
+}
+```
+
+## Rate Limit Strategies by Use Case
+
+### CI/CD Pipelines
+
+- Use caching for policy lists
+- Batch file changes in single evaluation
+- Queue builds during rate limit periods
+
+### Dashboard/UI
+
+- Cache API responses with appropriate TTL
+- Implement request debouncing
+- Show stale data with refresh option
+
+### Background Processing
+
+- Implement job queues with rate limiting
+- Process in order of priority
+- Log and alert on consistent rate limiting
+
+## Requesting Higher Limits
+
+For Enterprise customers needing higher limits:
+
+1. Contact your account manager
+2. Describe your use case and volume needs
+3. Limits can be customized per-organization
+
+## Monitoring
+
+### Track Rate Limit Usage
+
+Log rate limit headers for monitoring:
+
+```typescript
+function logRateLimits(response: Response): void {
+  const metrics = {
+    limit: response.headers.get('X-RateLimit-Limit'),
+    remaining: response.headers.get('X-RateLimit-Remaining'),
+    reset: response.headers.get('X-RateLimit-Reset'),
+    endpoint: response.url
+  };
+
+  logger.info('Rate limit status', metrics);
+
+  // Alert if approaching limit
+  if (parseInt(metrics.remaining || '100') < 10) {
+    alerting.warn('Approaching rate limit', metrics);
+  }
+}
+```
+
+### Dashboard Metrics
+
+Monitor in your MergeGuide dashboard:
+- **Settings > Usage** shows API usage graphs
+- Set up alerts for rate limit warnings

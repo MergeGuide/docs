@@ -1,0 +1,469 @@
+---
+title: API Endpoints
+description: Complete REST API endpoint reference
+---
+
+# API Endpoints
+
+Base URL: `https://api.mergeguide.ai/v1`
+
+## Evaluations
+
+### Create Evaluation
+
+Analyze code against policies.
+
+```http
+POST /evaluations
+```
+
+**Request:**
+
+```json
+{
+  "repository": "owner/repo",
+  "ref": "feature-branch",
+  "base_ref": "main",
+  "files": [
+    {
+      "path": "src/api/users.ts",
+      "content": "...",
+      "status": "modified"
+    }
+  ],
+  "policies": ["no-hardcoded-secrets", "no-sql-injection"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "eval_abc123",
+  "status": "completed",
+  "repository": "owner/repo",
+  "ref": "feature-branch",
+  "created_at": "2024-01-15T10:30:00Z",
+  "completed_at": "2024-01-15T10:30:05Z",
+  "passed": false,
+  "summary": {
+    "total_files": 1,
+    "total_violations": 2,
+    "errors": 1,
+    "warnings": 1
+  },
+  "violations": [
+    {
+      "id": "viol_xyz789",
+      "policy_id": "no-hardcoded-secrets",
+      "severity": "error",
+      "file": "src/api/users.ts",
+      "line": 45,
+      "column": 12,
+      "message": "Hardcoded API key detected",
+      "code_snippet": "const apiKey = 'sk-abc123...'",
+      "suggestion": "Move to environment variable"
+    }
+  ]
+}
+```
+
+### Get Evaluation
+
+Retrieve evaluation details.
+
+```http
+GET /evaluations/{evaluation_id}
+```
+
+**Response:** Same as create response.
+
+### List Evaluations
+
+List evaluations with filtering.
+
+```http
+GET /evaluations
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `repository` | string | Filter by repository |
+| `status` | string | Filter by status (pending, completed, failed) |
+| `passed` | boolean | Filter by pass/fail |
+| `since` | ISO8601 | Evaluations after this date |
+| `until` | ISO8601 | Evaluations before this date |
+| `limit` | integer | Max results (default: 20, max: 100) |
+| `cursor` | string | Pagination cursor |
+
+**Response:**
+
+```json
+{
+  "evaluations": [...],
+  "pagination": {
+    "next_cursor": "cursor_abc123",
+    "has_more": true
+  }
+}
+```
+
+### Delete Evaluation
+
+```http
+DELETE /evaluations/{evaluation_id}
+```
+
+**Response:** 204 No Content
+
+## Policies
+
+### List Policies
+
+```http
+GET /policies
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `enabled` | boolean | Filter by enabled state |
+| `category` | string | Filter by category |
+| `severity` | string | Filter by severity |
+
+**Response:**
+
+```json
+{
+  "policies": [
+    {
+      "id": "no-hardcoded-secrets",
+      "name": "No Hardcoded Secrets",
+      "description": "Detect secrets in code",
+      "severity": "error",
+      "enabled": true,
+      "category": "security",
+      "frameworks": ["nist-ssdf:PW", "owasp-asvs:V14"]
+    }
+  ]
+}
+```
+
+### Get Policy
+
+```http
+GET /policies/{policy_id}
+```
+
+**Response:**
+
+```json
+{
+  "id": "no-hardcoded-secrets",
+  "name": "No Hardcoded Secrets",
+  "description": "...",
+  "severity": "error",
+  "enabled": true,
+  "patterns": [...],
+  "suggestions": [...],
+  "documentation_url": "https://docs.mergeguide.ai/policies/no-hardcoded-secrets"
+}
+```
+
+### Update Policy
+
+```http
+PATCH /policies/{policy_id}
+```
+
+**Request:**
+
+```json
+{
+  "enabled": true,
+  "severity": "warning",
+  "settings": {
+    "detect_api_keys": true
+  }
+}
+```
+
+### Create Custom Policy
+
+```http
+POST /policies
+```
+
+**Request:**
+
+```json
+{
+  "id": "my-custom-policy",
+  "name": "My Custom Policy",
+  "description": "Custom organization policy",
+  "severity": "warning",
+  "patterns": [
+    {
+      "type": "regex",
+      "value": "CUSTOM_PATTERN",
+      "message": "Custom violation message"
+    }
+  ]
+}
+```
+
+### Delete Custom Policy
+
+```http
+DELETE /policies/{policy_id}
+```
+
+## Repositories
+
+### List Repositories
+
+```http
+GET /repositories
+```
+
+**Response:**
+
+```json
+{
+  "repositories": [
+    {
+      "id": "repo_abc123",
+      "name": "owner/repo",
+      "provider": "github",
+      "default_branch": "main",
+      "connected_at": "2024-01-01T00:00:00Z",
+      "last_evaluation": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+### Connect Repository
+
+```http
+POST /repositories
+```
+
+**Request:**
+
+```json
+{
+  "provider": "github",
+  "name": "owner/repo"
+}
+```
+
+### Disconnect Repository
+
+```http
+DELETE /repositories/{repository_id}
+```
+
+## Compliance
+
+### Get Compliance Overview
+
+```http
+GET /compliance
+```
+
+**Response:**
+
+```json
+{
+  "frameworks": [
+    {
+      "id": "nist-ssdf",
+      "name": "NIST SSDF",
+      "coverage": 75,
+      "controls": {
+        "total": 20,
+        "covered": 15
+      }
+    }
+  ],
+  "regulations": [
+    {
+      "id": "soc2",
+      "name": "SOC 2",
+      "coverage": 80
+    }
+  ]
+}
+```
+
+### Get Framework Coverage
+
+```http
+GET /compliance/frameworks/{framework_id}
+```
+
+**Response:**
+
+```json
+{
+  "framework": {
+    "id": "nist-ssdf",
+    "name": "NIST SSDF",
+    "version": "1.1"
+  },
+  "coverage": 75,
+  "controls": [
+    {
+      "id": "PW",
+      "name": "Produce Well-Secured Software",
+      "covered": true,
+      "policies": ["no-hardcoded-secrets", "no-sql-injection"]
+    }
+  ]
+}
+```
+
+### Generate Compliance Report
+
+```http
+POST /compliance/reports
+```
+
+**Request:**
+
+```json
+{
+  "frameworks": ["nist-ssdf", "soc2"],
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2024-01-31"
+  },
+  "format": "pdf"
+}
+```
+
+**Response:**
+
+```json
+{
+  "report_id": "report_abc123",
+  "status": "generating",
+  "download_url": null
+}
+```
+
+### Get Report Status
+
+```http
+GET /compliance/reports/{report_id}
+```
+
+## Organizations
+
+### Get Organization
+
+```http
+GET /organization
+```
+
+**Response:**
+
+```json
+{
+  "id": "org_abc123",
+  "name": "My Organization",
+  "plan": "enterprise",
+  "members_count": 25,
+  "repositories_count": 15,
+  "created_at": "2023-06-01T00:00:00Z"
+}
+```
+
+### Update Organization
+
+```http
+PATCH /organization
+```
+
+**Request:**
+
+```json
+{
+  "name": "Updated Organization Name",
+  "settings": {
+    "default_severity": "error",
+    "require_evaluation_pass": true
+  }
+}
+```
+
+## Webhooks
+
+### List Webhooks
+
+```http
+GET /webhooks
+```
+
+### Create Webhook
+
+```http
+POST /webhooks
+```
+
+**Request:**
+
+```json
+{
+  "url": "https://example.com/webhook",
+  "events": ["evaluation.completed", "policy.violation"],
+  "secret": "webhook_secret"
+}
+```
+
+### Delete Webhook
+
+```http
+DELETE /webhooks/{webhook_id}
+```
+
+## Health
+
+### API Health Check
+
+```http
+GET /health
+```
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "version": "1.2.3",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### Authenticated Health Check
+
+```http
+GET /health/auth
+```
+
+Verifies authentication is working.
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "authenticated": true,
+  "organization": "my-org",
+  "scopes": ["read:evaluations", "write:evaluations"]
+}
+```

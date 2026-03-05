@@ -1,0 +1,110 @@
+---
+title: OSCAL Export
+description: Export compliance evidence as NIST OSCAL v1.1.2
+---
+
+# OSCAL Export
+
+**Available on Team, Business, and Enterprise plans.** Business and Enterprise plans additionally support OSCAL webhooks for automated push delivery to GRC platforms.
+
+MergeGuide exports compliance posture as NIST OSCAL v1.1.2 — the machine-readable federal standard for compliance documentation. OSCAL output can be imported directly into GRC platforms or submitted to auditors.
+
+## What Is OSCAL?
+
+OSCAL (Open Security Controls Assessment Language) is a NIST standard that defines machine-readable formats for security documentation. Major GRC platforms support OSCAL import, meaning you can push MergeGuide's compliance evidence into your existing audit tooling without manual formatting.
+
+## What MergeGuide Generates
+
+| OSCAL Document Type | Contents |
+|--------------------|---------|
+| **Assessment Catalog** | 16 custom catalogs mapping MergeGuide detection rules to framework controls |
+| **Assessment Results** | Policy evaluation data linked to specific controls, with pass/fail evidence |
+| **Plan of Actions & Milestones (POA&M)** | Open violations by control, with policy assignment and remediation status |
+
+## Generating OSCAL Output
+
+### From the Dashboard
+
+1. Go to **Compliance > Export**
+2. Select one or more frameworks
+3. Set date range
+4. Select format: **OSCAL**
+5. Click **Export**
+
+The output downloads as a ZIP containing one OSCAL document per selected framework.
+
+### Via API
+
+```bash
+curl -X POST https://api.mergeguide.ai/v1/compliance/reports \
+  -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "frameworks": ["soc2", "nist-ssdf"],
+    "format": "oscal",
+    "date_range": {
+      "start": "2026-01-01",
+      "end": "2026-03-31"
+    }
+  }'
+```
+
+Response:
+
+```json
+{
+  "report_id": "report_abc123",
+  "status": "generating",
+  "download_url": null
+}
+```
+
+Poll for completion:
+
+```bash
+curl -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  https://api.mergeguide.ai/v1/compliance/reports/report_abc123
+```
+
+### Via MCP Server
+
+```json
+{
+  "name": "generate_evidence",
+  "arguments": {
+    "framework": "soc2",
+    "format": "oscal",
+    "date_range": "90d"
+  }
+}
+```
+
+## Supported GRC Platform Imports
+
+| Platform | Import Method |
+|----------|--------------|
+| Drata | OSCAL Assessment Results import |
+| Vanta | OSCAL file upload |
+| Secureframe | OSCAL Assessment Results import |
+| Tugboat Logic | OSCAL import |
+| RegScale | OSCAL native |
+| XACTA | OSCAL import |
+| Any FedRAMP-authorized GRC | OSCAL v1.1.2 Assessment Results |
+
+## Framework Coverage in OSCAL
+
+Each OSCAL export includes:
+
+- Which framework controls are covered by active MergeGuide policies
+- Which controls have violations (open findings)
+- Which controls have passed all checks in the date range
+- Bypass events mapped to the relevant controls
+
+## FedRAMP Use
+
+For FedRAMP authorization packages, MergeGuide generates OSCAL output formatted for:
+- System Security Plan (SSP) control implementation statements
+- Security Assessment Report (SAR) findings
+- Plan of Action and Milestones (POA&M)
+
+Contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai) for FedRAMP package assistance.

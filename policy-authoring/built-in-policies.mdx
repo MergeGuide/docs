@@ -1,0 +1,316 @@
+---
+title: Built-in Policies
+description: Reference for MergeGuide's built-in policy library
+---
+
+# Built-in Policies
+
+MergeGuide includes a comprehensive library of security and code quality policies.
+
+## Security Policies
+
+### no-hardcoded-secrets
+
+Detects hardcoded secrets, API keys, passwords, and credentials.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-hardcoded-secrets` |
+| Severity | Error |
+| Languages | All |
+| Frameworks | NIST SSDF PW, OWASP ASVS V14, CIS 16.4 |
+
+**Detects:**
+- API keys (AWS, Google, Stripe, etc.)
+- Passwords and passphrases
+- Private keys and certificates
+- Database connection strings
+- OAuth tokens
+
+**Configuration:**
+
+```yaml
+policies:
+  no-hardcoded-secrets:
+    enabled: true
+    severity: error
+    settings:
+      detect_aws_keys: true
+      detect_api_keys: true
+      detect_passwords: true
+      detect_private_keys: true
+      custom_patterns:
+        - "MY_COMPANY_KEY_\\w+"
+```
+
+### no-sql-injection
+
+Detects potential SQL injection vulnerabilities.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-sql-injection` |
+| Severity | Error |
+| Languages | JavaScript, TypeScript, Python, Java, PHP, Ruby |
+| Frameworks | OWASP ASVS V5, CIS 16.4 |
+
+**Detects:**
+- String concatenation in SQL queries
+- Template literal interpolation in queries
+- User input passed directly to queries
+
+**Configuration:**
+
+```yaml
+policies:
+  no-sql-injection:
+    enabled: true
+    severity: error
+    settings:
+      check_orms: true
+      allowed_functions:
+        - parameterizedQuery
+        - preparedStatement
+```
+
+### no-xss
+
+Detects potential Cross-Site Scripting (XSS) vulnerabilities.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-xss` |
+| Severity | Error |
+| Languages | JavaScript, TypeScript, PHP |
+| Frameworks | OWASP ASVS V5 |
+
+**Detects:**
+- innerHTML assignments with user data
+- document.write with user input
+- dangerouslySetInnerHTML in React
+- Unescaped template output
+
+### no-eval
+
+Detects dangerous dynamic code execution.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-eval` |
+| Severity | Error |
+| Languages | JavaScript, TypeScript, Python |
+| Frameworks | NIST SSDF PW, CIS 16.4 |
+
+**Detects:**
+- `eval()` function calls
+- `new Function()` constructors
+- `setTimeout/setInterval` with strings
+- `exec()` in Python
+
+### no-command-injection
+
+Detects potential command injection vulnerabilities.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-command-injection` |
+| Severity | Error |
+| Languages | JavaScript, Python, Ruby, PHP |
+| Frameworks | OWASP ASVS V5 |
+
+**Detects:**
+- Shell commands with user input
+- `child_process.exec` with variables
+- `os.system()` with user data
+
+## Code Quality Policies
+
+### no-console-in-production
+
+Detects console statements that shouldn't be in production.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-console-in-production` |
+| Severity | Warning |
+| Languages | JavaScript, TypeScript |
+
+**Detects:**
+- `console.log()`
+- `console.debug()`
+- `console.info()`
+- `console.warn()` (configurable)
+- `console.error()` (configurable)
+
+**Configuration:**
+
+```yaml
+policies:
+  no-console-in-production:
+    enabled: true
+    severity: warning
+    settings:
+      allow_warn: true
+      allow_error: true
+```
+
+### no-debugger
+
+Detects debugger statements.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-debugger` |
+| Severity | Error |
+| Languages | JavaScript, TypeScript, Python |
+
+### require-error-handling
+
+Detects unhandled promise rejections and missing try-catch.
+
+| Property | Value |
+|----------|-------|
+| ID | `require-error-handling` |
+| Severity | Warning |
+| Languages | JavaScript, TypeScript |
+
+**Detects:**
+- Promises without `.catch()`
+- Async functions without try-catch
+- Unhandled rejection patterns
+
+### no-todo-in-production
+
+Detects TODO/FIXME comments.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-todo-in-production` |
+| Severity | Info |
+| Languages | All |
+
+## Configuration Policies
+
+### no-debug-config
+
+Detects debug configuration in production code.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-debug-config` |
+| Severity | Warning |
+| Languages | All |
+
+**Detects:**
+- `DEBUG=true`
+- `NODE_ENV=development`
+- Debug flags in config files
+
+### require-https
+
+Detects insecure HTTP URLs.
+
+| Property | Value |
+|----------|-------|
+| ID | `require-https` |
+| Severity | Warning |
+| Languages | All |
+
+**Configuration:**
+
+```yaml
+policies:
+  require-https:
+    enabled: true
+    settings:
+      allow_localhost: true
+      allowed_domains:
+        - internal.company.com
+```
+
+### no-cors-wildcard
+
+Detects overly permissive CORS configuration.
+
+| Property | Value |
+|----------|-------|
+| ID | `no-cors-wildcard` |
+| Severity | Warning |
+| Languages | JavaScript, TypeScript, Python |
+
+**Detects:**
+- `Access-Control-Allow-Origin: *`
+- `cors({ origin: '*' })`
+
+## Enabling/Disabling Policies
+
+### Global Configuration
+
+In `.mergeguide.yaml`:
+
+```yaml
+policies:
+  # Disable a policy
+  no-todo-in-production:
+    enabled: false
+
+  # Change severity
+  no-console-in-production:
+    severity: error
+
+  # Enable with custom settings
+  no-hardcoded-secrets:
+    enabled: true
+    settings:
+      detect_aws_keys: true
+```
+
+### Per-File Override
+
+```typescript
+// mergeguide-disable no-console-in-production
+console.log("This is allowed");
+// mergeguide-enable no-console-in-production
+```
+
+### Per-Line Override
+
+```typescript
+console.log("Allowed"); // mergeguide-ignore-line no-console-in-production
+```
+
+## Policy Categories
+
+View policies by category in the dashboard:
+
+| Category | Policies |
+|----------|----------|
+| **Security** | no-hardcoded-secrets, no-sql-injection, no-xss, no-eval, no-command-injection |
+| **Quality** | no-console-in-production, no-debugger, require-error-handling, no-todo-in-production |
+| **Configuration** | no-debug-config, require-https, no-cors-wildcard |
+
+## Framework Mapping
+
+Policies map to compliance frameworks. MergeGuide supports 18 frameworks — the table below shows the primary built-in policies for each:
+
+| Framework | Relevant Built-in Policies |
+|-----------|---------------------------|
+| **NIST SSDF** | no-hardcoded-secrets, no-eval, no-sql-injection, no-command-injection |
+| **OWASP Top 10** | no-sql-injection, no-xss, no-command-injection, no-eval |
+| **OWASP ASVS L1/L2** | no-sql-injection, no-xss, no-command-injection, require-https, no-cors-wildcard |
+| **CWE Top 25** | no-sql-injection, no-xss, no-command-injection, no-hardcoded-secrets, no-eval |
+| **CIS Controls** | no-hardcoded-secrets, no-eval, require-https, no-cors-wildcard |
+| **SOC 2** | no-hardcoded-secrets, require-https, no-debug-config |
+| **HIPAA** | no-hardcoded-secrets, no-debug-config, require-https |
+| **PCI-DSS** | no-hardcoded-secrets, no-sql-injection, require-https, no-eval |
+| **ISO 27001** | no-hardcoded-secrets, require-https, no-cors-wildcard |
+| **GDPR** | no-hardcoded-secrets, no-debug-config |
+| **FedRAMP** | no-hardcoded-secrets, require-https, no-debug-config |
+| **EU AI Act** | no-hardcoded-secrets, no-eval |
+| **DORA** | no-hardcoded-secrets, require-https, no-debug-config |
+| **NIS2** | no-hardcoded-secrets, require-https, no-eval |
+| **SLSA** | no-hardcoded-secrets, no-eval |
+| **StateRAMP** | no-hardcoded-secrets, require-https, no-debug-config |
+| **Colorado AI Act** | no-hardcoded-secrets, no-eval |
+
+See the dashboard under **Compliance > Frameworks** for the complete control-level mapping for each framework.

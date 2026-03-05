@@ -1,0 +1,93 @@
+---
+title: SBOM Export
+description: Generate Software Bills of Materials in CycloneDX and SPDX formats
+---
+
+# SBOM Export
+
+**Available on Team, Business, and Enterprise plans.**
+
+MergeGuide generates Software Bills of Materials (SBOMs) in CycloneDX 1.5 and SPDX 2.3 formats. SBOMs document every component in your software supply chain — a requirement for FedRAMP, executive order compliance, and an increasing number of enterprise procurement requirements.
+
+## Formats
+
+| Format | Version | Best For |
+|--------|---------|---------|
+| CycloneDX | 1.5 | Vulnerability management tools, DAST/SAST integration |
+| SPDX | 2.3 | License compliance, legal review, OpenChain conformance |
+
+## Generating an SBOM
+
+### From the Dashboard
+
+1. Go to **SBOM > Generate**
+2. Select format: CycloneDX or SPDX
+3. Choose repository scope (single repo or all repos)
+4. Click **Generate SBOM**
+
+Output downloads as a ZIP file.
+
+### Via API
+
+```bash
+curl -X POST https://api.mergeguide.ai/v1/sbom \
+  -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repository": "owner/repo",
+    "format": "cyclonedx",
+    "version": "1.5"
+  }'
+```
+
+### Via MCP Server
+
+```json
+{
+  "name": "generate_sbom",
+  "arguments": {
+    "format": "cyclonedx",
+    "version": "1.5",
+    "path": "."
+  }
+}
+```
+
+## S3 Integration
+
+Configure automatic SBOM upload to S3:
+
+1. Go to **Settings > Integrations > SBOM**
+2. Enter your S3 bucket name and region
+3. Configure IAM role or access key credentials
+4. Enable automatic SBOM generation on PR merge
+
+SBOMs upload as `{repo-name}/{date}/{format}-{version}.json`.
+
+## What's Included
+
+The SBOM includes:
+
+- All direct and transitive dependencies
+- Component versions and checksums
+- License identifiers (SPDX license expressions)
+- Known vulnerability references (linked to CVE database)
+- Supplier and author information where available
+
+## Use Cases
+
+### FedRAMP and Government Compliance
+
+FedRAMP requires SBOMs for all software in the authorization boundary. MergeGuide generates CycloneDX SBOMs formatted for FedRAMP submission.
+
+### Executive Order 14028 (US)
+
+US Executive Order 14028 requires SBOMs for software sold to the federal government. MergeGuide SPDX output meets the minimum element requirements in NTIA guidance.
+
+### Enterprise Procurement
+
+Many enterprise buyers now require SBOMs as part of vendor security reviews. Generate and share MergeGuide SBOMs during procurement processes.
+
+### License Compliance
+
+SPDX SBOMs include complete license information for all components. Use the MCP server's `scan_licenses` tool to audit dependencies against your organization's allowed license policy.

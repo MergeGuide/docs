@@ -1,0 +1,302 @@
+---
+title: GitHub Actions
+description: Integrate MergeGuide with GitHub Actions workflows
+---
+
+# GitHub Actions
+
+Add MergeGuide policy checks to your GitHub Actions workflows.
+
+## Quick Start
+
+Add this workflow to `.github/workflows/mergeguide.yml`:
+
+```yaml
+name: MergeGuide Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install MergeGuide CLI
+        run: npm install -g @mergeguide/cli
+
+      - name: Run Policy Check
+        env:
+          MERGEGUIDE_API_KEY: ${{ secrets.MERGEGUIDE_API_KEY }}
+        run: mergeguide check --format sarif > results.sarif
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+```
+
+## Using the Official Action
+
+Use the official MergeGuide GitHub Action for simpler setup:
+
+```yaml
+name: MergeGuide Check
+
+on:
+  pull_request:
+
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mergeguide/action@v1
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+```
+
+### Action Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `api-key` | MergeGuide API key | Yes | - |
+| `fail-on-warnings` | Fail if warnings found | No | `false` |
+| `policies` | Comma-separated policy IDs | No | All enabled |
+| `config-file` | Path to config file | No | `.mergeguide.yaml` |
+| `sarif-output` | Output SARIF file | No | - |
+
+### Action Outputs
+
+| Output | Description |
+|--------|-------------|
+| `passed` | `true` if all checks passed |
+| `violations-count` | Number of violations found |
+| `evaluation-id` | ID of the evaluation |
+
+## Workflow Examples
+
+### Basic PR Check
+
+```yaml
+name: PR Policy Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mergeguide/action@v1
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+```
+
+### Check with Branch Protection
+
+```yaml
+name: Required Policy Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mergeguide/action@v1
+        id: check
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+          fail-on-warnings: true
+
+      - name: Comment on PR
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ Policy check failed. Please review the violations.'
+            })
+```
+
+### Security Scanning with SARIF
+
+```yaml
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mergeguide/action@v1
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+          sarif-output: mergeguide-results.sarif
+
+      - name: Upload to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: mergeguide-results.sarif
+```
+
+### Scheduled Compliance Scan
+
+```yaml
+name: Weekly Compliance Scan
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9 AM
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CLI
+        run: npm install -g @mergeguide/cli
+
+      - name: Run Full Scan
+        env:
+          MERGEGUIDE_API_KEY: ${{ secrets.MERGEGUIDE_API_KEY }}
+        run: |
+          mergeguide check --all --format json > results.json
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-report
+          path: results.json
+```
+
+### Matrix Strategy for Multiple Languages
+
+```yaml
+name: Multi-Language Check
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        language: [javascript, python, java]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mergeguide/action@v1
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+          config-file: .mergeguide-${{ matrix.language }}.yaml
+```
+
+## Setting Up Secrets
+
+1. Go to your repository's **Settings > Secrets and variables > Actions**
+2. Click **New repository secret**
+3. Name: `MERGEGUIDE_API_KEY`
+4. Value: Your MergeGuide API key
+5. Click **Add secret**
+
+### Organization-Level Secrets
+
+For multiple repositories, use organization secrets:
+
+1. Go to organization **Settings > Secrets and variables > Actions**
+2. Create `MERGEGUIDE_API_KEY`
+3. Set repository access policy
+
+## Branch Protection Rules
+
+Require MergeGuide checks to pass:
+
+1. Go to repository **Settings > Branches**
+2. Add or edit branch protection rule for `main`
+3. Enable "Require status checks to pass"
+4. Search for and select "MergeGuide Check"
+5. Save changes
+
+## Caching for Faster Builds
+
+Cache the CLI installation:
+
+```yaml
+- name: Cache MergeGuide CLI
+  uses: actions/cache@v4
+  with:
+    path: ~/.npm
+    key: ${{ runner.os }}-mergeguide-cli
+
+- name: Install MergeGuide CLI
+  run: npm install -g @mergeguide/cli
+```
+
+## Troubleshooting
+
+### Check Not Running
+
+1. Verify workflow file is in `.github/workflows/`
+2. Check workflow triggers match your use case
+3. Verify YAML syntax is valid
+
+### Authentication Errors
+
+1. Verify `MERGEGUIDE_API_KEY` secret is set
+2. Check API key hasn't expired
+3. Ensure key has required scopes
+
+### Timeout Issues
+
+Increase timeout for large repositories:
+
+```yaml
+- uses: mergeguide/action@v1
+  timeout-minutes: 15
+  with:
+    api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+```
+
+### Debug Mode
+
+Enable debug logging:
+
+```yaml
+- uses: mergeguide/action@v1
+  env:
+    MERGEGUIDE_DEBUG: 'true'
+  with:
+    api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+```

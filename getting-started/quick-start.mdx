@@ -1,0 +1,67 @@
+---
+title: Quick Start
+description: Get up and running with MergeGuide in under 5 minutes
+---
+
+# Quick Start
+
+Get MergeGuide running in your development environment in under 5 minutes.
+
+## Prerequisites
+
+- Node.js 18+ or Python 3.9+
+- Git repository with code to analyze
+
+## Install the CLI
+
+```bash
+# Using npm (recommended)
+npm install -g @mergeguide/cli
+
+# Using pip
+pip install mergeguide
+```
+
+## Authenticate
+
+```bash
+mergeguide auth login
+```
+
+This opens your browser to complete authentication. Your API key is stored securely in `~/.mergeguide/credentials`.
+
+## Run Your First Check
+
+Navigate to any Git repository and run:
+
+```bash
+mergeguide check
+```
+
+MergeGuide analyzes your staged changes against your organization's policies and displays results:
+
+```
+MergeGuide Check Results
+========================
+
+Repository: my-app
+Branch: feature/user-auth
+Files analyzed: 12
+
+Policies: 3 passed, 1 warning, 0 failed
+
+[PASS] no-hardcoded-secrets
+[PASS] no-sql-injection
+[WARN] require-error-handling
+       src/api/users.ts:45 - Consider adding error handling for async operation
+[PASS] no-console-in-production
+
+Overall: PASS (with warnings)
+```
+
+## What's Next?
+
+- [Installation Guide](/getting-started/installation) - Detailed installation options
+- [First Check Deep Dive](/getting-started/first-check) - Understanding check results
+- [CLI Reference](/user-guides/cli) - Full command documentation
+- [VS Code Extension](/user-guides/vscode-extension) - Real-time feedback in your editor

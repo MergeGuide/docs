@@ -1,0 +1,135 @@
+---
+title: Compliance Overview
+description: MergeGuide compliance framework coverage and evidence generation
+---
+
+# Compliance Overview
+
+MergeGuide maps your detection rules to compliance framework controls, tracks coverage over time, and exports evidence artifacts for auditors.
+
+## Supported Frameworks
+
+18 frameworks across three categories:
+
+### Security Frameworks
+
+| Framework | What It Covers |
+|-----------|---------------|
+| NIST SSDF | NIST Secure Software Development Framework — development lifecycle security practices |
+| OWASP Top 10 | OWASP's top 10 web application security risks |
+| OWASP ASVS L1 | Application Security Verification Standard Level 1 — basic security controls |
+| OWASP ASVS L2 | Application Security Verification Standard Level 2 — defense-in-depth controls |
+| CWE Top 25 | MITRE Common Weakness Enumeration — most dangerous software weaknesses |
+| CIS Controls | Center for Internet Security — prioritized security actions |
+| SLSA | Supply chain Levels for Software Artifacts — build integrity and provenance |
+
+### Regulatory Compliance
+
+| Framework | Applicable To |
+|-----------|--------------|
+| SOC 2 | Service organizations handling customer data |
+| HIPAA | Healthcare organizations and business associates |
+| PCI-DSS | Organizations handling payment card data |
+| ISO 27001 | International information security management standard |
+| GDPR | EU data protection regulation |
+| FedRAMP | US federal government cloud services |
+| StateRAMP | US state government cloud services |
+
+### Emerging Regulations
+
+| Framework | Effective |
+|-----------|----------|
+| EU AI Act | EU regulation on artificial intelligence systems |
+| DORA | EU Digital Operational Resilience Act (financial sector) |
+| NIS2 | EU Network and Information Security Directive 2 |
+| Colorado AI Act | US state AI regulation — SB 24-205 |
+
+## How Coverage Works
+
+Each detection rule is mapped to one or more framework controls. When a policy evaluates code and produces a result — pass or fail — that result becomes compliance evidence.
+
+**Example mapping:**
+- `no-hardcoded-secrets` → SOC 2 CC6.1, NIST SSDF PW.9.1, PCI-DSS 6.3.2, HIPAA §164.312(a)(2)(iv)
+
+The dashboard shows coverage percentage: what fraction of the framework's controls are covered by at least one active MergeGuide policy.
+
+## Framework Templates
+
+Each supported framework has a policy template — a curated set of policies pre-mapped to the framework's controls. Enable a template to instantly cover that framework:
+
+1. Go to **Compliance > Frameworks**
+2. Select a framework
+3. Click **Enable Template**
+4. Review the policies that will be activated
+5. Confirm
+
+Templates can be customized. You can add additional policies or adjust severity levels after enabling.
+
+## Feature Availability by Plan
+
+| Feature | Free | Pro | Team | Business | Enterprise |
+|---------|------|-----|------|----------|------------|
+| OWASP Top 10, CWE Top 25 | ✓ | ✓ | ✓ | ✓ | ✓ |
+| NIST SSDF, OWASP ASVS L1, CIS Controls, PCI-DSS | — | ✓ | ✓ | ✓ | ✓ |
+| SOC 2, HIPAA, EU AI Act, GDPR, OWASP ASVS L2 | — | — | ✓ | ✓ | ✓ |
+| DORA, ISO 27001:2022, NIST SP 800-53, FedRAMP, StateRAMP | — | — | — | ✓ | ✓ |
+| NIS2, Colorado AI Act, custom rules | — | — | — | — | ✓ |
+| OSCAL export | — | — | ✓ | ✓ | ✓ |
+| OSCAL webhooks (automated GRC delivery) | — | — | — | ✓ | ✓ |
+| SBOM (CycloneDX / SPDX) | — | — | ✓ | ✓ | ✓ |
+| PolicyMerge | — | — | ✓ | ✓ | ✓ |
+| Bypass rate tracking | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Immutable evidence trail | — | — | — | ✓ | ✓ |
+
+## Evidence Generation
+
+MergeGuide generates compliance evidence in two formats.
+
+**Available on Team plan and above.**
+
+### NIST OSCAL v1.1.2
+
+The machine-readable standard for compliance documentation. OSCAL output includes:
+- 16 custom assessment catalogs (one per mapped framework)
+- Assessment results linking each control to policy evaluation data
+- Plan of Actions and Milestones (POA&M) for violations
+
+OSCAL files can be imported directly into GRC platforms: Drata, Vanta, Secureframe, Tugboat Logic, RegScale, and any OSCAL-compatible tool.
+
+**Export:** Dashboard > Compliance > Export > OSCAL
+
+**API:**
+```bash
+curl -X POST https://api.mergeguide.ai/v1/compliance/reports \
+  -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  -d '{"frameworks": ["soc2", "hipaa"], "format": "oscal", "date_range": {"start": "2026-01-01", "end": "2026-03-31"}}'
+```
+
+### CSV / PDF
+
+For human-readable audit evidence:
+
+**Export:** Dashboard > Compliance > Export > CSV or PDF
+
+## PolicyMerge
+
+**Available on Team plan and above.**
+
+When multiple frameworks are active, PolicyMerge deconflicts overlapping requirements:
+
+- Identifies controls that appear in multiple frameworks
+- Applies strictest-wins resolution when frameworks have conflicting requirements
+- Visualizes overlap in the dashboard
+- Generates merged assessments covering all active frameworks in a single report
+
+Without PolicyMerge, enabling SOC 2 + ISO 27001 + HIPAA could trigger duplicate alerts for the same code pattern across three frameworks. PolicyMerge collapses these into a single finding mapped to all three frameworks.
+
+## Bypass Rate as Compliance Evidence
+
+Every policy override — when a developer bypasses a failing check — is logged automatically. Bypass rate tracking serves as evidence for:
+
+- SOC 2 CC6.1 (logical access control monitoring)
+- NIST SSDF RV.1.3 (tracking and remediation)
+- ISO 27001 A.12.6.1 (management of technical vulnerabilities)
+
+Dashboard: **Compliance > Bypass Rate**

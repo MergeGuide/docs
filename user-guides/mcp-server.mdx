@@ -1,0 +1,300 @@
+---
+title: MCP Server
+description: Integrate MergeGuide with AI coding assistants via Model Context Protocol
+---
+
+# MCP Server
+
+The MCP server plugs MergeGuide into AI assistants. Claude Code, Cursor, and any MCP-compatible tool can check code against your policies before suggesting it.
+
+## What is MCP?
+
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open standard for integrating external tools into AI assistants. MergeGuide provides an MCP server that works with Claude Code, Cursor, and other compatible clients.
+
+## Installation
+
+```bash
+npm install -g @mergeguide/mcp-server
+```
+
+## Configuration
+
+### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mergeguide": {
+      "command": "npx",
+      "args": ["-y", "@mergeguide/mcp-server"],
+      "env": {
+        "MERGEGUIDE_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+Add to Cursor settings:
+
+```json
+{
+  "mcp.servers": {
+    "mergeguide": {
+      "command": "npx",
+      "args": ["-y", "@mergeguide/mcp-server"],
+      "env": {
+        "MERGEGUIDE_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### VS Code with Continue
+
+Add to `.continue/config.json`:
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "mergeguide",
+      "command": "npx",
+      "args": ["-y", "@mergeguide/mcp-server"],
+      "env": {
+        "MERGEGUIDE_API_KEY": "your-api-key"
+      }
+    }
+  ]
+}
+```
+
+## Available Tools
+
+The MCP server exposes 10 tools to AI assistants:
+
+### `check_policy`
+
+Check a code snippet against a specific policy.
+
+```json
+{
+  "name": "check_policy",
+  "arguments": {
+    "code": "const apiKey = 'sk-abc123';",
+    "filename": "config.ts",
+    "language": "typescript",
+    "policy_id": "no-hardcoded-secrets"
+  }
+}
+```
+
+### `list_policies`
+
+List all policies available for the organization, including framework mappings and enabled state.
+
+```json
+{
+  "name": "list_policies",
+  "arguments": {
+    "category": "security"
+  }
+}
+```
+
+### `scan_repository`
+
+Run a full policy scan on the current repository.
+
+```json
+{
+  "name": "scan_repository",
+  "arguments": {
+    "path": ".",
+    "frameworks": ["soc2", "owasp-top-10"]
+  }
+}
+```
+
+### `scan_vulnerabilities`
+
+Scan dependencies for known vulnerabilities.
+
+```json
+{
+  "name": "scan_vulnerabilities",
+  "arguments": {
+    "path": ".",
+    "include_transitive": true
+  }
+}
+```
+
+### `scan_licenses`
+
+Audit dependency licenses for compliance with your organization's allowed license policy.
+
+```json
+{
+  "name": "scan_licenses",
+  "arguments": {
+    "path": ".",
+    "allowed_licenses": ["MIT", "Apache-2.0", "BSD-3-Clause"]
+  }
+}
+```
+
+### `scan_cicd`
+
+Inspect CI/CD pipeline configuration files for security issues.
+
+```json
+{
+  "name": "scan_cicd",
+  "arguments": {
+    "path": ".github/workflows/"
+  }
+}
+```
+
+### `scan_iac`
+
+Scan Infrastructure as Code files (Terraform, CloudFormation, Kubernetes manifests) for misconfigurations.
+
+```json
+{
+  "name": "scan_iac",
+  "arguments": {
+    "path": "infrastructure/",
+    "framework": "terraform"
+  }
+}
+```
+
+### `generate_evidence`
+
+Generate compliance evidence artifacts for a specified framework.
+
+```json
+{
+  "name": "generate_evidence",
+  "arguments": {
+    "framework": "soc2",
+    "format": "oscal",
+    "date_range": "30d"
+  }
+}
+```
+
+### `generate_sbom`
+
+Generate a Software Bill of Materials.
+
+```json
+{
+  "name": "generate_sbom",
+  "arguments": {
+    "format": "cyclonedx",
+    "version": "1.5",
+    "path": "."
+  }
+}
+```
+
+### `get_remediation`
+
+Get remediation guidance for a specific violation type.
+
+```json
+{
+  "name": "get_remediation",
+  "arguments": {
+    "violation": "no-hardcoded-secrets",
+    "language": "typescript",
+    "context": "API key in config file"
+  }
+}
+```
+
+## How AI Assistants Use MergeGuide
+
+When writing code with an AI assistant, MergeGuide tools are available as part of the assistant's context:
+
+1. **Pre-check suggestions** — Before suggesting code, verify it passes your organization's policies
+2. **Explain violations** — When you share code that violates a policy, the assistant explains why
+3. **Suggest fixes** — Get policy-compliant alternatives for flagged patterns
+4. **Generate evidence** — Ask the assistant to generate compliance artifacts for your auditor
+
+### Example Interaction
+
+**You:** Write a database connection function
+
+**AI (with MergeGuide):**
+
+> I'll check this against your security policies before suggesting it.
+>
+> ```typescript
+> import { Pool } from 'pg';
+>
+> const pool = new Pool({
+>   connectionString: process.env.DATABASE_URL,
+>   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false
+> });
+>
+> export async function query(text: string, params?: unknown[]) {
+>   const client = await pool.connect();
+>   try {
+>     return await client.query(text, params);
+>   } finally {
+>     client.release();
+>   }
+> }
+> ```
+>
+> Passes your active policies:
+> - `no-hardcoded-secrets` — connection string from environment variable
+> - `no-sql-injection` — parameterized query interface
+> - SSL enabled in production
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `MERGEGUIDE_API_KEY` | API key for authentication | Yes |
+| `MERGEGUIDE_ORG` | Organization ID (uses default from key if omitted) | No |
+| `MERGEGUIDE_API_URL` | Custom API endpoint | No |
+| `MERGEGUIDE_LOG_LEVEL` | Logging level: `debug`, `info`, `warn`, `error` | No |
+
+## Troubleshooting
+
+### Server Not Starting
+
+```bash
+# Run directly to see errors
+npx @mergeguide/mcp-server
+```
+
+### Authentication Errors
+
+```bash
+curl -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
+  https://api.mergeguide.ai/v1/health
+```
+
+### Tools Not Appearing
+
+1. Restart your AI assistant
+2. Verify MCP configuration JSON syntax
+3. Check server is running: `ps aux | grep mcp-server`
+
+## Security Notes
+
+- API keys are stored in your local MCP configuration
+- Code is sent to the MergeGuide API for analysis
+- No code is retained after analysis completes
+- Use organization-scoped API keys for shared team environments

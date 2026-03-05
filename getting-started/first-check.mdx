@@ -1,0 +1,165 @@
+---
+title: First Check
+description: Understanding MergeGuide check results and what they mean
+---
+
+# Understanding Your First Check
+
+After running `mergeguide check`, here's how to interpret and act on the results.
+
+## Check Output Explained
+
+```
+MergeGuide Check Results
+========================
+
+Repository: my-app
+Branch: feature/user-auth
+Commit: a1b2c3d (staged changes)
+Files analyzed: 12
+
+Policies Evaluated: 8
+├── Passed: 6
+├── Warnings: 1
+└── Failed: 1
+
+[PASS] no-hardcoded-secrets
+       No secrets detected in code changes
+
+[PASS] no-sql-injection
+       No SQL injection vulnerabilities found
+
+[WARN] require-error-handling
+       src/api/users.ts:45 - Consider adding error handling
+       Recommendation: Wrap async operations in try-catch
+
+[FAIL] no-eval-usage
+       src/utils/dynamic.ts:23 - eval() usage detected
+       This is blocked by your organization's security policy
+
+Overall: FAIL
+```
+
+## Result Levels
+
+| Level | Meaning | Action Required |
+|-------|---------|-----------------|
+| **PASS** | Code meets policy requirements | None |
+| **WARN** | Potential issue, not blocking | Review recommended |
+| **FAIL** | Policy violation | Must fix before merge |
+
+## Detailed Violation Information
+
+For more details on any violation:
+
+```bash
+mergeguide check --verbose
+```
+
+This shows:
+- Full file path and line numbers
+- Code snippet with violation highlighted
+- Policy documentation link
+- Suggested fix
+
+## Common First-Check Results
+
+### Hardcoded Secrets
+
+```
+[FAIL] no-hardcoded-secrets
+       src/config.ts:12 - Potential API key detected
+       Pattern matched: api_key = "sk-..."
+```
+
+**Fix:** Move secrets to environment variables:
+
+```typescript
+// Before
+const apiKey = "sk-abc123...";
+
+// After
+const apiKey = process.env.API_KEY;
+```
+
+### SQL Injection
+
+```
+[FAIL] no-sql-injection
+       src/db/queries.ts:34 - String interpolation in SQL query
+```
+
+**Fix:** Use parameterized queries:
+
+```typescript
+// Before
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+
+// After
+const query = `SELECT * FROM users WHERE id = $1`;
+await db.query(query, [userId]);
+```
+
+### Console Statements
+
+```
+[WARN] no-console-in-production
+       src/api/handler.ts:56 - console.log detected
+```
+
+**Fix:** Use proper logging or remove:
+
+```typescript
+// Before
+console.log("User logged in:", userId);
+
+// After
+logger.info("User logged in", { userId });
+```
+
+## Ignoring Specific Violations
+
+For legitimate exceptions, use inline comments:
+
+```typescript
+// mergeguide-ignore-next-line no-eval-usage
+const result = eval(trustedCode); // Required for legacy plugin system
+```
+
+Or ignore entire files in `.mergeguide.yaml`:
+
+```yaml
+ignore:
+  - "**/*.test.ts"
+  - "scripts/migrations/**"
+```
+
+## Re-running Checks
+
+After fixing violations:
+
+```bash
+# Check again
+mergeguide check
+
+# Check specific files only
+mergeguide check src/api/users.ts src/utils/dynamic.ts
+```
+
+## Viewing Policy Details
+
+To understand why a policy exists:
+
+```bash
+# List all policies
+mergeguide policies list
+
+# Show policy details
+mergeguide policies show no-eval-usage
+```
+
+## Next Steps
+
+- [CLI Commands Reference](/user-guides/cli)
+- [Policy Authoring Basics](/policy-authoring/basics)
+- [Configure Git Hooks](/user-guides/git-hooks) for automatic checks

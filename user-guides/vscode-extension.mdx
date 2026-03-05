@@ -1,0 +1,165 @@
+---
+title: VS Code Extension
+description: Real-time policy feedback in Visual Studio Code
+---
+
+# VS Code Extension
+
+The extension shows policy violations inline as you code — same visual style as TypeScript errors and ESLint.
+
+## Require ments
+
+VS Code 1.85 or later.
+
+## Install
+
+1. Open VS Code
+2. Extensions sidebar (`Cmd+Shift+X` / `Ctrl+Shift+X`)
+3. Search for "MergeGuide"
+4. Click **Install**
+
+Or via CLI:
+
+```bash
+code --install-extension mergeguide.mergeguide-vscode
+```
+
+## Real-time Diagnostics
+
+Policy violations appear inline as you type:
+
+- Red squiggles = error-severity (blocks commit)
+- Yellow squiggles = warnings
+- Blue squiggles = info
+
+Hover to see policy name, violation reason, and suggested fixes.
+
+## Problems Panel
+
+All violations in your workspace appear in the Problems panel (`Cmd+Shift+M`), grouped by severity and file.
+
+### Quick Fixes
+
+Many violations offer automatic fixes:
+
+1. Click the lightbulb icon or press `Cmd+.`
+2. Select from available options:
+   - **Fix this violation** — Apply suggested fix
+   - **Ignore this line** — Add inline ignore comment
+   - **Ignore this file** — Add to `.mergeguide.yaml` ignore patterns
+
+### Sidebar Views
+
+The MergeGuide sidebar (activity bar) includes three panels:
+
+- **Policy Violations** — All current violations in the workspace
+- **Policies** — Available policies and their enabled state
+- **Evaluations** — History of evaluation runs
+
+### Status Bar
+
+Shows current check status and violation count for the active file. Click to view details.
+
+### Pre-commit Integration
+
+The extension installs a shell-based git pre-commit hook. When enabled, policy checks run before every commit — the same checks that run in CI, at the point where fixes are cheapest.
+
+## Commands
+
+Access via Command Palette (`Cmd+Shift+P`):
+
+| Command | Description |
+|---------|-------------|
+| `MergeGuide: Check Current File` | Run check on active file |
+| `MergeGuide: Check All Files in Workspace` | Check entire workspace |
+| `MergeGuide: Reload Policies` | Refresh policy cache from API |
+| `MergeGuide: Set API Key` | Securely store API key in VS Code SecretStorage |
+| `MergeGuide: Clear API Key` | Remove stored API key |
+| `MergeGuide: Check Authentication Status` | Verify API key and connection |
+| `MergeGuide: Pre-Commit Policy Check` | Run check manually as pre-commit step |
+| `MergeGuide: Install Pre-commit Hook` | Install shell-based git hook |
+| `MergeGuide: Uninstall Pre-commit Hook` | Remove git hook |
+| `MergeGuide: Navigate to Violation` | Jump to violation location in code |
+| `MergeGuide: Refresh Violations` | Reload violations panel |
+| `MergeGuide: Refresh Evaluations` | Reload evaluations panel |
+
+## Configuration
+
+Open Settings (`Cmd+,`) and search for "MergeGuide":
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `mergeguide.enable` | Enable/disable policy checking | `true` |
+| `mergeguide.debounceMs` | Delay before checking (ms) | `300` |
+| `mergeguide.maxFileSizeKb` | Skip files larger than this (KB) | `1024` |
+| `mergeguide.preCommitHook` | Hook behavior: `prompt`, `always`, `never` | `prompt` |
+| `mergeguide.preCommitCheck` | Enable pre-commit policy check | `true` |
+| `mergeguide.preCommitBlockOnErrors` | Block commit on error-severity violations | `true` |
+| `mergeguide.apiUrl` | MergeGuide API base URL | `https://portal.mergeguide.ai` |
+| `mergeguide.policyCacheTtlMs` | Policy cache TTL (ms) | `300000` (5 min) |
+| `mergeguide.trace.server` | Language server trace: `off`, `messages`, `verbose` | `off` |
+
+### Workspace Settings
+
+Create `.vscode/settings.json`:
+
+```json
+{
+  "mergeguide.enable": true,
+  "mergeguide.debounceMs": 500,
+  "mergeguide.preCommitHook": "always"
+}
+```
+
+## Authentication
+
+Set your API key via the Command Palette:
+
+1. `Cmd+Shift+P` → `MergeGuide: Set API Key`
+2. Paste your API key
+3. Key is stored in VS Code SecretStorage (not plain text settings)
+
+Or authenticate via CLI first — the extension reads credentials from the CLI credential store:
+
+```bash
+mergeguide auth login
+```
+
+## Supported Languages
+
+The extension activates for files in these languages:
+
+Python, JavaScript, TypeScript (including JSX/TSX), Java, Go, Ruby, PHP, C# (.NET), C/C++, Rust, SQL
+
+Detection coverage follows your organization's active policies. Language support at the detection engine level extends to all 15 supported languages.
+
+## Troubleshooting
+
+### Extension Not Working
+
+1. Check Output panel (`View > Output > MergeGuide`)
+2. Verify authentication: `MergeGuide: Check Authentication Status`
+3. Confirm extension is enabled for the workspace
+
+### Diagnostics Not Appearing
+
+1. Open a file in a supported language
+2. Check that `mergeguide.enable` is `true`
+3. Run `MergeGuide: Reload Policies` to refresh from API
+
+### Performance
+
+If the extension is slow on large files:
+
+```json
+{
+  "mergeguide.debounceMs": 1000,
+  "mergeguide.maxFileSizeKb": 512
+}
+```
+
+### Reset Extension
+
+1. Run `MergeGuide: Clear API Key`
+2. Disable and re-enable the extension
+3. Restart VS Code

@@ -1,0 +1,401 @@
+---
+title: Common Issues
+description: Solutions to frequently encountered problems
+---
+
+# Common Issues
+
+Solutions to frequently encountered problems with MergeGuide.
+
+## Authentication Issues
+
+### "Invalid API key" Error
+
+**Symptoms:**
+```
+Error: Invalid or expired API key
+```
+
+**Solutions:**
+
+1. **Verify key format:**
+   ```bash
+   # Key should start with mg_key_
+   echo $MERGEGUIDE_API_KEY | head -c 10
+   # Output: mg_key_pr
+   ```
+
+2. **Check expiration:**
+   ```bash
+   mergeguide auth status
+   ```
+
+3. **Regenerate key:**
+   - Go to portal.mergeguide.ai > Settings > API Keys
+   - Generate new key
+   - Update environment variable
+
+4. **Check for whitespace:**
+   ```bash
+   # Ensure no trailing newline
+   echo -n "$MERGEGUIDE_API_KEY" | wc -c
+   ```
+
+### "Insufficient permissions" Error
+
+**Symptoms:**
+```
+Error: Insufficient permissions for this operation
+Required scope: write:policies
+```
+
+**Solutions:**
+
+1. **Check key scopes:**
+   ```bash
+   mergeguide auth status
+   # Shows current key scopes
+   ```
+
+2. **Generate key with correct scopes:**
+   ```bash
+   mergeguide auth create-key --scope "read:evaluations,write:evaluations"
+   ```
+
+## Installation Issues
+
+### npm Permission Errors
+
+**Symptoms:**
+```
+Error: EACCES: permission denied
+```
+
+**Solutions:**
+
+1. **Use npx instead:**
+   ```bash
+   npx @mergeguide/cli check
+   ```
+
+2. **Fix npm permissions:**
+   ```bash
+   mkdir ~/.npm-global
+   npm config set prefix '~/.npm-global'
+   echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+   source ~/.bashrc
+   npm install -g @mergeguide/cli
+   ```
+
+3. **Use nvm:**
+   ```bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+   nvm install 20
+   npm install -g @mergeguide/cli
+   ```
+
+### SSL Certificate Errors
+
+**Symptoms:**
+```
+Error: unable to verify the first certificate
+```
+
+**Solutions:**
+
+1. **Corporate proxy with custom CA:**
+   ```bash
+   export NODE_EXTRA_CA_CERTS=/path/to/corporate-ca.pem
+   mergeguide check
+   ```
+
+2. **Temporary workaround (not recommended):**
+   ```bash
+   NODE_TLS_REJECT_UNAUTHORIZED=0 mergeguide check
+   ```
+
+## Check Issues
+
+### "No files to check" Error
+
+**Symptoms:**
+```
+No files to check. Ensure you have staged changes or specify files.
+```
+
+**Solutions:**
+
+1. **Stage your changes:**
+   ```bash
+   git add .
+   mergeguide check
+   ```
+
+2. **Check specific files:**
+   ```bash
+   mergeguide check src/api/*.ts
+   ```
+
+3. **Check all changes:**
+   ```bash
+   mergeguide check --all
+   ```
+
+### False Positives
+
+**Symptoms:**
+Policy triggers on code that isn't actually a violation.
+
+**Solutions:**
+
+1. **Ignore specific line:**
+   ```typescript
+   // mergeguide-ignore-next-line no-hardcoded-secrets
+   const testApiKey = 'test-key-12345';
+   ```
+
+2. **Ignore in config:**
+   ```yaml
+   # .mergeguide.yaml
+   ignore:
+     - "**/*.test.ts"
+     - "**/fixtures/**"
+   ```
+
+3. **Report to support** if the pattern needs adjustment.
+
+### Check Takes Too Long
+
+**Symptoms:**
+Check runs for several minutes or times out.
+
+**Solutions:**
+
+1. **Check fewer files:**
+   ```bash
+   # Only staged files
+   mergeguide check --staged
+
+   # Specific directory
+   mergeguide check src/api/
+   ```
+
+2. **Increase timeout:**
+   ```bash
+   mergeguide check --timeout 300
+   ```
+
+3. **Use offline mode:**
+   ```bash
+   mergeguide policies sync
+   mergeguide check --offline
+   ```
+
+4. **Exclude large files:**
+   ```yaml
+   # .mergeguide.yaml
+   ignore:
+     - "**/*.min.js"
+     - "**/dist/**"
+     - "**/vendor/**"
+   ```
+
+## VS Code Extension Issues
+
+### Extension Not Loading
+
+**Solutions:**
+
+1. **Check extension is enabled:**
+   - Open Extensions panel
+   - Find MergeGuide
+   - Ensure it's enabled for workspace
+
+2. **Check output panel:**
+   - View > Output
+   - Select "MergeGuide" from dropdown
+   - Look for error messages
+
+3. **Reinstall extension:**
+   ```bash
+   code --uninstall-extension MergeGuideAI.mergeguide
+   code --install-extension MergeGuideAI.mergeguide
+   ```
+
+### Diagnostics Not Appearing
+
+**Solutions:**
+
+1. **Check file is in scope:**
+   ```json
+   // .vscode/settings.json
+   {
+     "mergeguide.include": ["src/**/*.ts"]
+   }
+   ```
+
+2. **Verify authentication:**
+   - Command Palette > "MergeGuide: Sign In"
+
+3. **Restart extension:**
+   - Command Palette > "Developer: Reload Window"
+
+## SCM Integration Issues
+
+### Checks Not Running on GitHub PRs
+
+**Solutions:**
+
+1. **Verify app is installed:**
+   - Go to repository Settings > GitHub Apps
+   - Check MergeGuide is listed
+
+2. **Check webhook delivery:**
+   - Settings > Webhooks
+   - Find MergeGuide webhook
+   - Check recent deliveries for failures
+
+3. **Re-install app:**
+   - Uninstall and reinstall from github.com/apps/mergeguide
+
+### Checks Not Running on GitLab / Bitbucket / Azure DevOps
+
+**Solutions:**
+
+1. **Verify webhook delivery:**
+   - GitLab: Project Settings > Webhooks > find MergeGuide > view recent deliveries
+   - Bitbucket: Repository Settings > Webhooks > find MergeGuide > view recent deliveries
+   - Azure DevOps: Project Settings > Service hooks > find MergeGuide > view history
+
+2. **Verify OAuth token hasn't expired:**
+   - Go to **Settings > SCM Connections** in the MergeGuide dashboard
+   - Click **Reconnect** on the affected SCM
+
+3. **Check network access:**
+   - MergeGuide must be able to reach your SCM's API
+   - For self-hosted GitLab or Bitbucket Server, confirm network routing and TLS certificates
+
+### "No mergeguide.yaml found" Warning
+
+**Solutions:**
+
+1. **Create config file:**
+   ```yaml
+   # .mergeguide.yaml
+   policies:
+     no-hardcoded-secrets:
+       enabled: true
+   ```
+
+2. **Commit to repository:**
+   ```bash
+   git add .mergeguide.yaml
+   git commit -m "Add MergeGuide configuration"
+   ```
+
+## Network Issues
+
+### Connection Timeouts
+
+**Symptoms:**
+```
+Error: Request timeout
+```
+
+**Solutions:**
+
+1. **Check connectivity:**
+   ```bash
+   curl -I https://api.mergeguide.ai/v1/health
+   ```
+
+2. **Check firewall rules:**
+   - Ensure outbound HTTPS to api.mergeguide.ai is allowed
+
+3. **Use offline mode:**
+   ```bash
+   mergeguide policies sync
+   mergeguide check --offline
+   ```
+
+### Rate Limiting
+
+**Symptoms:**
+```
+Error: Rate limit exceeded
+```
+
+**Solutions:**
+
+1. **Wait and retry:**
+   ```bash
+   # Check Retry-After header value
+   sleep 60
+   mergeguide check
+   ```
+
+2. **Reduce request frequency:**
+   - Batch files in single check
+   - Cache policy results
+   - Use webhooks instead of polling
+
+3. **Upgrade plan** for higher limits.
+
+## Configuration Issues
+
+### Config File Not Being Read
+
+**Solutions:**
+
+1. **Check file location:**
+   ```bash
+   # Must be in repository root
+   ls -la .mergeguide.yaml
+   ```
+
+2. **Validate YAML syntax:**
+   ```bash
+   mergeguide config validate
+   ```
+
+3. **Check file name:**
+   - Must be `.mergeguide.yaml` or `.mergeguide.yml`
+
+### Policy Not Taking Effect
+
+**Solutions:**
+
+1. **Verify policy is enabled:**
+   ```yaml
+   policies:
+     my-policy:
+       enabled: true  # Must be true
+   ```
+
+2. **Check file patterns match:**
+   ```yaml
+   patterns:
+     - type: regex
+       files:
+         - "src/**/*.ts"  # Must match your files
+   ```
+
+3. **Clear cache:**
+   ```bash
+   mergeguide cache clear
+   ```
+
+## Getting Help
+
+If these solutions don't resolve your issue:
+
+1. **Check status page:** status.mergeguide.ai
+2. **Search documentation:** docs.mergeguide.ai
+3. **Contact support:** support@mergeguide.ai
+4. **Community forum:** community.mergeguide.ai
+
+When reporting issues, include:
+- MergeGuide CLI version (`mergeguide --version`)
+- Operating system
+- Error message and stack trace
+- Steps to reproduce

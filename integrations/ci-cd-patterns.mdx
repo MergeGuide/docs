@@ -1,0 +1,416 @@
+---
+title: CI/CD Patterns
+description: Best practices for CI/CD integration
+---
+
+# CI/CD Patterns
+
+Best practices and patterns for integrating MergeGuide into your CI/CD pipelines.
+
+## Integration Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         CI/CD Pipeline                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐     │
+│  │  Build  │───▶│  Test   │───▶│MergeGuide│───▶│ Deploy  │     │
+│  └─────────┘    └─────────┘    └─────────┘    └─────────┘     │
+│                                      │                          │
+│                                      ▼                          │
+│                              ┌─────────────┐                    │
+│                              │   Block or   │                    │
+│                              │   Approve    │                    │
+│                              └─────────────┘                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Common Platforms
+
+### GitLab CI
+
+**Recommended: Use the official MergeGuide GitLab CI component:**
+
+```yaml
+# .gitlab-ci.yml
+include:
+  - project: 'mergeguide/gitlab-ci'
+    ref: main
+    file: '/templates/policy-check.yml'
+
+stages:
+  - test
+  - security
+  - deploy
+
+policy-check:
+  extends: .mergeguide-policy-check
+  stage: security
+```
+
+**Alternative: Using the Docker image directly:**
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - test
+  - security
+  - deploy
+
+policy-check:
+  stage: security
+  image: registry.gitlab.com/mergeguide/gitlab-ci:latest
+  script:
+    - mergeguide check --format json --output results.json
+  artifacts:
+    reports:
+      sast: results.json
+    paths:
+      - results.json
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+```
+
+**CI/CD Catalog Component (GitLab 16.0+):**
+
+```yaml
+include:
+  - component: gitlab.com/mergeguide/gitlab-ci/policy-check@1.0.0
+    inputs:
+      paths: "src/"
+      fail_on_warnings: true
+```
+
+### Jenkins
+
+```groovy
+// Jenkinsfile
+pipeline {
+    agent any
+
+    environment {
+        MERGEGUIDE_API_KEY = credentials('mergeguide-api-key')
+    }
+
+    stages {
+        stage('Policy Check') {
+            steps {
+                sh 'npm install -g @mergeguide/cli'
+                sh 'mergeguide check --format json > results.json'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'results.json'
+                }
+                failure {
+                    echo 'Policy check failed!'
+                }
+            }
+        }
+    }
+}
+```
+
+### CircleCI
+
+```yaml
+# .circleci/config.yml
+version: 2.1
+
+jobs:
+  policy-check:
+    docker:
+      - image: node:20
+    steps:
+      - checkout
+      - run:
+          name: Install MergeGuide
+          command: npm install -g @mergeguide/cli
+      - run:
+          name: Run Policy Check
+          command: mergeguide check
+      - store_artifacts:
+          path: results.json
+
+workflows:
+  pr-check:
+    jobs:
+      - policy-check:
+          filters:
+            branches:
+              ignore: main
+```
+
+### Azure DevOps
+
+```yaml
+# azure-pipelines.yml
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '20.x'
+
+  - script: npm install -g @mergeguide/cli
+    displayName: 'Install MergeGuide'
+
+  - script: mergeguide check --format json > $(Build.ArtifactStagingDirectory)/results.json
+    displayName: 'Run Policy Check'
+    env:
+      MERGEGUIDE_API_KEY: $(MERGEGUIDE_API_KEY)
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/results.json'
+      artifactName: 'policy-results'
+```
+
+### Bitbucket Pipelines
+
+```yaml
+# bitbucket-pipelines.yml
+image: node:20
+
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: Policy Check
+          script:
+            - npm install -g @mergeguide/cli
+            - mergeguide check
+          artifacts:
+            - results.json
+```
+
+## Pattern: Fail Fast
+
+Run policy checks early to fail quickly:
+
+```yaml
+# GitHub Actions example
+jobs:
+  quick-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mergeguide/action@v1
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+          policies: no-hardcoded-secrets  # Critical only
+
+  full-tests:
+    needs: quick-checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test  # Takes longer
+```
+
+## Pattern: Parallel Checks
+
+Run policy checks in parallel with tests:
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mergeguide/action@v1
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+
+  deploy:
+    needs: [test, policy-check]  # Both must pass
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./deploy.sh
+```
+
+## Pattern: Security Gate
+
+Block deployments on security violations:
+
+```yaml
+jobs:
+  security-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mergeguide/action@v1
+        id: security
+        with:
+          api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+          policies: no-hardcoded-secrets,no-sql-injection,no-xss
+          fail-on-warnings: true
+
+      - name: Security Approval Required
+        if: failure()
+        run: |
+          echo "::error::Security violations found. Manual approval required."
+          exit 1
+```
+
+## Pattern: Progressive Enforcement
+
+Start with warnings, progress to failures:
+
+```yaml
+# Phase 1: Warnings only
+- uses: mergeguide/action@v1
+  with:
+    api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+  continue-on-error: true  # Don't block
+
+# Phase 2: Block on errors only
+- uses: mergeguide/action@v1
+  with:
+    api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+    fail-on-warnings: false
+
+# Phase 3: Full enforcement
+- uses: mergeguide/action@v1
+  with:
+    api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+    fail-on-warnings: true
+```
+
+## Pattern: Environment-Specific
+
+Different rules for different environments:
+
+```yaml
+jobs:
+  check-dev:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mergeguide/action@v1
+        with:
+          config-file: .mergeguide-dev.yaml
+
+  check-prod:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mergeguide/action@v1
+        with:
+          config-file: .mergeguide-prod.yaml
+          fail-on-warnings: true
+```
+
+## Pattern: Monorepo
+
+Check specific packages in a monorepo:
+
+```yaml
+jobs:
+  detect-changes:
+    outputs:
+      packages: ${{ steps.changes.outputs.packages }}
+    steps:
+      - id: changes
+        run: |
+          # Detect changed packages
+          echo "packages=['frontend','backend']" >> $GITHUB_OUTPUT
+
+  check-packages:
+    needs: detect-changes
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.detect-changes.outputs.packages) }}
+    steps:
+      - uses: mergeguide/action@v1
+        with:
+          config-file: packages/${{ matrix.package }}/.mergeguide.yaml
+```
+
+## Pattern: Caching
+
+Cache for faster repeat runs:
+
+```yaml
+steps:
+  - uses: actions/cache@v4
+    with:
+      path: ~/.mergeguide/cache
+      key: mergeguide-${{ hashFiles('**/.mergeguide.yaml') }}
+
+  - uses: mergeguide/action@v1
+    with:
+      api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+```
+
+## Pattern: Notification
+
+Send notifications on failures:
+
+```yaml
+steps:
+  - uses: mergeguide/action@v1
+    id: check
+    continue-on-error: true
+    with:
+      api-key: ${{ secrets.MERGEGUIDE_API_KEY }}
+
+  - name: Slack Notification
+    if: steps.check.outcome == 'failure'
+    uses: slackapi/slack-github-action@v1
+    with:
+      payload: |
+        {
+          "text": "Policy check failed on ${{ github.repository }}",
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "❌ *Policy Check Failed*\n${{ steps.check.outputs.violations-count }} violations found"
+              }
+            }
+          ]
+        }
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+## Best Practices
+
+### 1. Fail Fast
+
+Put security checks early in the pipeline.
+
+### 2. Cache Dependencies
+
+Cache CLI installation for faster runs.
+
+### 3. Use SARIF Output
+
+Export results to SARIF for GitHub Security integration.
+
+### 4. Set Timeouts
+
+Add reasonable timeouts to prevent hung builds.
+
+### 5. Version Pin
+
+Pin action versions for reproducibility.
+
+### 6. Secure Secrets
+
+Use repository/organization secrets, never hardcode.

@@ -1,0 +1,245 @@
+---
+title: Dashboard
+description: Using the MergeGuide web dashboard for compliance monitoring
+---
+
+# Dashboard
+
+The dashboard is your compliance control panel. Track policy evaluations across all repositories, manage framework mappings, and export evidence for auditors.
+
+## Access
+
+Visit [portal.mergeguide.ai](https://portal.mergeguide.ai). Sign in with your organization account.
+
+## Home Page
+
+**Compliance Score** — Percentage of code evaluated that passed all active policies.
+
+**Recent Evaluations** — Latest check results, sortable by time and status.
+
+**Active Policies** — Count of enabled policies and their pass/fail breakdown.
+
+**Bypass Events** — Timeline of policy overrides (developer pushed code past a failed check).
+
+**Trend Chart** — 7-day, 30-day, 90-day, or all-time compliance trend.
+
+## Navigation
+
+### Evaluations
+
+View and search all policy evaluations:
+
+- Filter by repository, SCM, date range, status
+- Drill down into specific violations with full code context
+- Export results as CSV or JSON
+- Compare evaluations across time periods
+
+### Policies
+
+Manage your organization's policies:
+
+- View all available policies with framework mappings
+- Enable/disable individual policies
+- Configure policy severity overrides
+- Create and manage custom policies
+
+### Compliance
+
+Track coverage across 18 compliance frameworks:
+
+**Security Frameworks:**
+- NIST SSDF, OWASP Top 10, OWASP ASVS L1, OWASP ASVS L2
+- CWE Top 25, CIS Controls, SLSA
+
+**Regulatory:**
+- SOC 2, HIPAA, PCI-DSS, ISO 27001, GDPR, FedRAMP, StateRAMP
+
+**Emerging Regulations:**
+- EU AI Act, DORA, NIS2, Colorado AI Act
+
+For each framework:
+- View control-level coverage percentage
+- See which policies cover which controls
+- Export coverage reports for auditors
+
+### OSCAL Export
+
+Export compliance evidence as NIST OSCAL v1.1.2:
+
+1. Go to **Compliance > Export**
+2. Select framework(s)
+3. Choose date range
+4. Click **Export OSCAL**
+
+OSCAL output can be imported directly into GRC platforms (Drata, Vanta, Secureframe, Tugboat Logic, or any OSCAL-compatible tool). MergeGuide generates 16 custom OSCAL catalogs mapping your detection rules to framework controls.
+
+### SBOM
+
+Generate Software Bills of Materials:
+
+1. Go to **SBOM > Generate**
+2. Select format: CycloneDX 1.5 or SPDX 2.3
+3. Choose repository scope
+4. Click **Generate SBOM**
+
+Output downloads as a ZIP file or uploads directly to S3 (configure in Settings > Integrations).
+
+### Bypass Rate
+
+Track policy governance health:
+
+The bypass rate dashboard shows every instance where a developer pushed code past a failing policy check. This data is available on all tiers and serves as evidence for SOC 2 CC6.1 (logical access controls monitoring).
+
+- Timeline view showing bypass events
+- Drill-down by repository, developer, policy
+- Export bypass event log for auditors
+
+### PolicyMerge
+
+When multiple compliance frameworks are active, PolicyMerge:
+
+- Identifies overlapping controls across frameworks
+- Resolves conflicts using strictest-wins logic
+- Visualizes policy overlap across your active frameworks
+- Generates merged assessments for multi-framework audits
+
+Example: OWASP ASVS L2 and PCI-DSS both require input validation. PolicyMerge applies the stricter of the two sets of requirements rather than duplicating alerts.
+
+### Settings
+
+Configure organization settings:
+
+- **Team** — Invite members, manage roles
+- **SCM Connections** — Connect GitHub, GitLab, Bitbucket, Azure DevOps
+- **API Keys** — Generate and manage API keys
+- **Security** — SSO/SAML, SCIM provisioning, WebAuthn MFA (Business/Enterprise)
+- **Notifications** — Email, Slack, webhook configuration
+- **Billing** — Subscription management, seat counts
+
+## Key Features
+
+### Evaluation Details
+
+Click any evaluation to see:
+
+```
+Evaluation: eval_abc123
+Repository: myorg/backend-api
+SCM: GitHub
+Branch: feature/user-auth
+Timestamp: 2026-03-01 14:32:00 UTC
+Status: FAILED
+
+Violations (3):
+├── [ERROR] no-hardcoded-secrets
+│   └── src/config.ts:45 - API key detected
+├── [ERROR] no-sql-injection
+│   └── src/db/users.ts:23 - String interpolation in query
+└── [WARN] no-console-in-production
+    └── src/api/handler.ts:12 - console.log detected
+```
+
+### Violation Drill-Down
+
+Click any violation to see:
+
+- Full code context with highlighted line
+- Policy documentation and framework mapping
+- Remediation guidance
+- Historical occurrences of the same pattern
+- Link to the PR where this was flagged
+
+### Policy Configuration
+
+Configure individual policies in the dashboard:
+
+```yaml
+Policy: no-hardcoded-secrets
+Status: Enabled
+Severity: Error
+
+Settings:
+  - detect_api_keys: true
+  - detect_passwords: true
+  - detect_private_keys: true
+  - custom_patterns:
+    - "INTERNAL_KEY_.*"
+```
+
+## User Roles
+
+| Role | Permissions |
+|------|-------------|
+| **Viewer** | View evaluations, compliance data, bypass reports |
+| **Developer** | Viewer + manage personal API keys |
+| **Admin** | Developer + manage policies, users, SCM connections |
+| **Owner** | Admin + billing, delete organization, configure SSO/SCIM |
+
+## Notifications
+
+Configure in **Settings > Notifications**:
+
+- **Email** — Daily/weekly summaries, critical violation alerts
+- **Slack** — Channel notifications for check results and bypass events
+- **Webhooks** — Custom integrations for any event
+
+### Slack Integration
+
+1. Go to **Settings > Integrations**
+2. Click **Connect Slack**
+3. Select the channel for notifications
+4. Configure which events to notify on
+
+### Webhook Integration
+
+```json
+{
+  "url": "https://your-webhook.com/mergeguide",
+  "events": ["evaluation.failed", "policy.violation", "bypass.detected"],
+  "secret": "your-webhook-secret"
+}
+```
+
+## API Access
+
+Generate API keys for programmatic access:
+
+1. Go to **Settings > API Keys**
+2. Click **Generate New Key**
+3. Set name, permissions, and expiration
+4. Copy the key (shown only once)
+
+See [API Reference](/api-reference/authentication) for usage.
+
+## Team Management
+
+### Inviting Members
+
+1. Go to **Settings > Team**
+2. Click **Invite Member**
+3. Enter email and select role
+4. Send invitation
+
+### SCIM Auto-Provisioning
+
+Enterprise plans support SCIM v2 for automatic user provisioning from your IdP. See [SCIM Setup](/enterprise/scim-provisioning).
+
+## Troubleshooting
+
+### Can't See Evaluations
+
+1. Verify the repository is connected (Settings > SCM Connections)
+2. Confirm you have at least Viewer permissions
+3. Check the date range filter includes the expected time period
+
+### Missing Compliance Data
+
+1. Verify policies are enabled for the relevant frameworks
+2. Confirm evaluations have run recently
+3. Use **Compliance > Refresh** to recalculate coverage metrics
+
+### OSCAL Export Empty
+
+1. Check that evaluations exist for the selected date range
+2. Verify the framework is enabled and has active policies
+3. Contact support with your evaluation IDs if the issue persists

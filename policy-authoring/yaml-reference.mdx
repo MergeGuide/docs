@@ -1,0 +1,350 @@
+---
+title: YAML Reference
+description: Complete reference for policy YAML configuration
+---
+
+# YAML Reference
+
+Complete reference for policy configuration in YAML format.
+
+## Full Schema
+
+```yaml
+# Required fields
+id: string                    # Unique policy identifier
+name: string                  # Human-readable name
+description: string           # Detailed description
+
+# Optional fields
+severity: error | warning | info  # Default: error
+enabled: boolean                  # Default: true
+version: string                   # Policy version (semver)
+extends: string                   # Parent policy ID
+
+# Pattern matching
+patterns:
+  - type: regex | ast | semantic
+    value: string               # Pattern definition
+    message: string             # Violation message
+    languages: [string]         # Limit to specific languages
+    files: [string]             # Limit to file patterns
+
+# Fix suggestions
+suggestions:
+  - string                      # Suggested remediation
+
+# Auto-fix configuration
+fix:
+  type: replace | insert | delete
+  pattern: string               # What to find
+  replacement: string           # What to replace with
+
+# File handling
+ignore:
+  - string                      # Glob patterns to skip
+
+include:
+  - string                      # Only check these patterns
+
+# Metadata
+tags:
+  - string                      # Categorization tags
+
+frameworks:
+  - string                      # Related compliance frameworks
+
+references:
+  - url: string                 # External documentation
+    title: string
+```
+
+## Field Details
+
+### `id`
+
+Unique identifier for the policy.
+
+```yaml
+id: no-hardcoded-secrets
+```
+
+Requirements:
+- Lowercase letters, numbers, hyphens only
+- Must start with a letter
+- Maximum 64 characters
+- Must be unique in organization
+
+### `name`
+
+Human-readable display name.
+
+```yaml
+name: No Hardcoded Secrets
+```
+
+### `description`
+
+Detailed explanation of the policy.
+
+```yaml
+description: |
+  Detects hardcoded secrets, API keys, passwords, and other sensitive
+  credentials in source code. These should be stored in environment
+  variables or a secrets manager instead.
+```
+
+### `severity`
+
+Violation severity level.
+
+```yaml
+severity: error    # Blocks merges
+severity: warning  # Reports but allows
+severity: info     # Informational only
+```
+
+### `enabled`
+
+Whether the policy is active.
+
+```yaml
+enabled: true   # Active
+enabled: false  # Disabled
+```
+
+### `version`
+
+Policy version for tracking changes.
+
+```yaml
+version: "1.2.0"
+```
+
+### `extends`
+
+Inherit from another policy.
+
+```yaml
+extends: no-hardcoded-secrets
+
+# Override or add to inherited config
+severity: warning
+patterns:
+  - type: regex
+    value: "additional_pattern"
+```
+
+## Pattern Configuration
+
+### Regex Patterns
+
+```yaml
+patterns:
+  - type: regex
+    value: "password\\s*=\\s*['\"][^'\"]+['\"]"
+    message: "Hardcoded password detected"
+    flags: "i"  # Case-insensitive
+```
+
+Supported flags:
+- `i` - Case insensitive
+- `m` - Multiline
+- `s` - Dot matches newline
+- `g` - Global (find all matches)
+
+### AST Patterns
+
+Abstract Syntax Tree patterns for language-aware matching:
+
+```yaml
+patterns:
+  - type: ast
+    language: javascript
+    value: |
+      CallExpression[callee.name="eval"]
+    message: "eval() usage detected"
+```
+
+### Semantic Patterns
+
+High-level semantic patterns:
+
+```yaml
+patterns:
+  - type: semantic
+    value: "sql-string-concatenation"
+    message: "Potential SQL injection vulnerability"
+```
+
+### Language Filtering
+
+Limit patterns to specific languages:
+
+```yaml
+patterns:
+  - type: regex
+    value: "fmt\\.Print"
+    languages:
+      - go
+    message: "Use structured logging instead of fmt.Print"
+```
+
+### File Filtering
+
+Limit patterns to specific files:
+
+```yaml
+patterns:
+  - type: regex
+    value: "TODO"
+    files:
+      - "src/**/*.ts"
+      - "!src/**/*.test.ts"
+    message: "TODO comment found"
+```
+
+## Fix Configuration
+
+### Replace Fix
+
+```yaml
+fix:
+  type: replace
+  pattern: "console\\.log\\((.*)\\)"
+  replacement: "logger.info($1)"
+```
+
+### Insert Fix
+
+```yaml
+fix:
+  type: insert
+  position: before  # or after
+  pattern: "^import"
+  content: "import { logger } from './logger';\n"
+```
+
+### Delete Fix
+
+```yaml
+fix:
+  type: delete
+  pattern: "console\\.log\\(.*\\);?\\n?"
+```
+
+## File Handling
+
+### Ignore Patterns
+
+```yaml
+ignore:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/__mocks__/**"
+```
+
+### Include Patterns
+
+Only check matching files:
+
+```yaml
+include:
+  - "src/**/*.ts"
+  - "lib/**/*.ts"
+```
+
+## Metadata
+
+### Tags
+
+Categorize policies:
+
+```yaml
+tags:
+  - security
+  - secrets
+  - owasp
+```
+
+### Frameworks
+
+Link to compliance frameworks:
+
+```yaml
+frameworks:
+  - nist-ssdf:PW
+  - owasp-asvs:V14
+  - cis-controls:16.4
+```
+
+### References
+
+External documentation:
+
+```yaml
+references:
+  - url: https://owasp.org/Top10/A03_2021-Injection/
+    title: OWASP Top 10 - Injection
+  - url: https://cwe.mitre.org/data/definitions/798.html
+    title: CWE-798 - Hardcoded Credentials
+```
+
+## Complete Example
+
+```yaml
+id: no-sql-injection
+name: No SQL Injection
+description: |
+  Detects potential SQL injection vulnerabilities from string
+  concatenation or interpolation in SQL queries.
+
+severity: error
+enabled: true
+version: "1.0.0"
+
+patterns:
+  - type: regex
+    value: "(SELECT|INSERT|UPDATE|DELETE).*\\$\\{.*\\}"
+    languages: [javascript, typescript]
+    message: "SQL query with string interpolation detected"
+
+  - type: regex
+    value: "(SELECT|INSERT|UPDATE|DELETE).*\\+\\s*\\w+"
+    languages: [javascript, typescript, java]
+    message: "SQL query with string concatenation detected"
+
+  - type: ast
+    language: python
+    value: |
+      Call[func.attr="execute"][args[0].type="JoinedStr"]
+    message: "SQL query with f-string detected"
+
+suggestions:
+  - "Use parameterized queries instead"
+  - "Use an ORM or query builder"
+
+fix:
+  type: replace
+  pattern: "\\$\\{(\\w+)\\}"
+  replacement: "?"
+
+ignore:
+  - "**/*.test.*"
+  - "**/migrations/**"
+
+tags:
+  - security
+  - injection
+  - owasp
+
+frameworks:
+  - nist-ssdf:PW
+  - owasp-asvs:V5
+  - cis-controls:16.4
+
+references:
+  - url: https://owasp.org/Top10/A03_2021-Injection/
+    title: OWASP Top 10 - Injection
+```
