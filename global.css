@@ -20,3 +20,33 @@
 :not(.dark) #sidebar a[data-active="true"] {
   color: #FFFFFF;
 }
+
+/* Group/section headings in sidebar - white text on dark background */
+:not(.dark) #sidebar h2,
+:not(.dark) #sidebar h3,
+:not(.dark) #sidebar h4,
+:not(.dark) #sidebar p,
+:not(.dark) #sidebar span,
+:not(.dark) #sidebar div[class*="group"],
+:not(.dark) #sidebar [data-testid*="group"],
+:not(.dark) #sidebar button {
+  color: #FFFFFF;
+}
+
+/* Remove white bar/shadow at top of sidebar */
+:not(.dark) #sidebar::before,
+:not(.dark) #sidebar::after {
+  display: none;
+  box-shadow: none;
+}
+
+:not(.dark) #sidebar {
+  border-top: none;
+  box-shadow: none;
+}
+
+:not(.dark) #sidebar > div:first-child {
+  border-top: none;
+  box-shadow: none;
+  background: transparent;
+}
