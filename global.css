@@ -33,11 +33,11 @@
   color: #FFFFFF;
 }
 
-/* Remove white bar/shadow at top of sidebar */
+/* Remove white scroll-fade gradient overlay on navy sidebar */
 :not(.dark) #sidebar::before,
 :not(.dark) #sidebar::after {
-  display: none;
-  box-shadow: none;
+  display: none !important;
+  box-shadow: none !important;
 }
 
 :not(.dark) #sidebar {
@@ -49,4 +49,29 @@
   border-top: none;
   box-shadow: none;
   background: transparent;
+}
+
+/* Kill Mintlify's scroll-fade gradient overlays inside sidebar */
+:not(.dark) #sidebar div[style*="gradient"],
+:not(.dark) #sidebar div[style*="linear-gradient"] {
+  display: none !important;
+}
+
+/* Broader catch: any element with white/transparent gradient background inside sidebar */
+:not(.dark) #sidebar * {
+  --tw-gradient-from: transparent !important;
+  --tw-gradient-to: transparent !important;
+}
+
+/* Target sticky/absolute positioned overlay divs at top of sidebar scroll area */
+:not(.dark) #sidebar > div > div[class*="sticky"],
+:not(.dark) #sidebar > div > div[class*="absolute"],
+:not(.dark) #sidebar > div > div[style*="position"] {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Force all direct sidebar children backgrounds transparent */
+:not(.dark) #sidebar > div > div {
+  background-image: none !important;
 }
