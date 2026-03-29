@@ -25,7 +25,7 @@ Runs before each commit, checking staged changes.
 
 ```bash
 # Install pre-commit hook only
-mergeguide hooks install --pre-commit
+mergeguide hooks install --type pre-commit
 ```
 
 Behavior:
@@ -40,7 +40,7 @@ Runs before pushing, checking all commits being pushed.
 
 ```bash
 # Install pre-push hook only
-mergeguide hooks install --pre-push
+mergeguide hooks install --type pre-push
 ```
 
 Behavior:
@@ -54,7 +54,7 @@ Validates commit message format.
 
 ```bash
 # Install commit-msg hook
-mergeguide hooks install --commit-msg
+mergeguide hooks install --type commit-msg
 ```
 
 Configurable rules:
@@ -112,7 +112,7 @@ If you're already using [Husky](https://typicode.github.io/husky/), add MergeGui
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npx mergeguide check --staged
+mergeguide check --staged
 ```
 
 ## Integration with lint-staged
@@ -194,7 +194,6 @@ hooks:
 Or check only staged files:
 
 ```bash
-mergeguide check --staged --quick
 ```
 
 ### Conflicts with Other Hooks

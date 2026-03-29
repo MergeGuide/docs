@@ -117,7 +117,7 @@ steps:
     inputs:
       versionSpec: '20.x'
 
-  - script: npm install -g @mergeguide/cli
+  - script: pip install mergeguide
     displayName: 'Install MergeGuide CLI'
 
   - script: mergeguide scan --output json

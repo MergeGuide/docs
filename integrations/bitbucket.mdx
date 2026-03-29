@@ -102,7 +102,7 @@ pipelines:
           name: MergeGuide Compliance Check
           image: node:20
           script:
-            - npm install -g @mergeguide/cli
+            - pip install mergeguide
             - mergeguide scan --output json --fail-on error
           artifacts:
             - mergeguide-results.json

@@ -15,7 +15,7 @@ MergeGuide evaluates code against compliance frameworks. It runs policy checks i
 
 1. Connect your SCM platform
 2. Select frameworks: SOC 2, HIPAA, PCI-DSS, ISO 27001, EU AI Act, etc.
-3. Every PR runs against 711 detection rules (237 regex + 474 Semgrep taint analysis)
+3. Every PR runs against 1,099 detection rules (130 regex + 969 Semgrep taint analysis)
 4. Violations post as inline comments on the PR
 5. Export evidence as NIST OSCAL v1.1.2 or SBOM for your auditor
 
@@ -29,21 +29,17 @@ GitHub, GitLab, Bitbucket, and Azure DevOps — all four with full PR gate integ
 
 ### Is my code sent to the cloud?
 
-Code diffs are sent to MergeGuide's API for analysis. Code is not stored after analysis completes. All transmission uses TLS. MergeGuide is SOC 2 Type II certified.
+Code diffs are sent to MergeGuide's API for analysis. Code is not stored after analysis completes. All transmission uses TLS. SOC 2 Type II certification is on our roadmap.
 
-### Can I use MergeGuide offline?
+### Can I use MergeGuide without submitting results?
 
-The CLI supports offline mode for policy checks:
+Yes, use the `--local` flag to scan without sending results to the dashboard:
 
 ```bash
-# Sync policies for offline use
-mergeguide policies sync
-
-# Run checks offline
-mergeguide check --offline
+mergeguide check . --local
 ```
 
-Offline mode uses cached policies and does not report to the dashboard.
+Local mode runs the full detection engine but does not upload findings.
 
 ---
 
@@ -51,15 +47,15 @@ Offline mode uses cached policies and does not report to the dashboard.
 
 ### What plans does MergeGuide offer?
 
-| Plan | Price | Seat Min | Included Frameworks |
-|------|-------|----------|-------------------|
-| Free | $0 | — | OWASP Top 10, CWE Top 25 |
-| Pro | $29/seat/mo | — | + NIST SSDF, OWASP ASVS L1, CIS Controls, PCI-DSS |
-| Team | $39/seat/mo | 5 seats | + SOC 2, HIPAA, EU AI Act, GDPR, OWASP ASVS L2, PolicyMerge, SBOM, SAML/OIDC SSO |
-| Business | $79/seat/mo | 10 seats | + DORA, ISO 27001:2022, NIST SP 800-53, FedRAMP, StateRAMP, OSCAL export, SCIM, RBAC, dedicated CSM |
-| Enterprise | Custom | — | + NIS2, Colorado AI Act, custom detection rules, OSCAL webhooks, government tenant |
+| Plan | Frameworks | Key Features |
+|------|-----------|-------------|
+| Free | OWASP Top 10, CWE Top 25 (2) | 1 repo, 50 evals/mo, community support |
+| Pro | Same as Free (2) | 20 repos, evidence export, custom policies |
+| Team | + OWASP ASVS, PCI-DSS, CIS Controls, OWASP Agentic Apps (6) | SAML/OIDC SSO, teams, PolicyMerge, SBOM |
+| Business | + SOC 2, HIPAA, GDPR, NIST SSDF, DORA, ISO 27001, + 5 more (18) | OSCAL export, SCIM, custom roles, Security Insights |
+| Enterprise | + NIST 800-53, FedRAMP, SLSA, NIS2, + 2 more (24) | OSCAL webhooks, dedicated support, unlimited |
 
-Annual billing available with ~18% discount.
+For pricing, visit [mergeguide.ai](https://mergeguide.ai) or contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai).
 
 ### What does the Free plan include?
 
@@ -83,7 +79,7 @@ Free gives individual developers access to:
 
 ### Which compliance frameworks does MergeGuide support?
 
-18 frameworks:
+24 frameworks:
 
 **Security:** NIST SSDF, OWASP Top 10, OWASP ASVS L1, OWASP ASVS L2, CWE Top 25, CIS Controls, SLSA
 
@@ -109,7 +105,7 @@ curl -X POST https://api.mergeguide.ai/v1/compliance/reports \
 
 ### Is MergeGuide SOC 2 compliant?
 
-Yes. MergeGuide is SOC 2 Type II certified. Contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai) for the audit report.
+SOC 2 Type II certification is on our roadmap. Contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai) for details on our security practices.
 
 ### Can I generate SBOMs?
 
@@ -253,13 +249,7 @@ See the [SAML Setup Guide](/enterprise/saml-sso). Supported IdPs include Okta, A
 3. Verify the new key works
 4. Revoke the old key
 
-```bash
-# Generate new
-mergeguide auth create-key --name "New Key"
-
-# Revoke old
-mergeguide auth revoke-key --key-id old_key_id
-```
+Create and revoke API keys from the dashboard at **Settings > API Keys**.
 
 ---
 

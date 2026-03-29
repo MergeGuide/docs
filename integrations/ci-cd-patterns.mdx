@@ -97,7 +97,7 @@ pipeline {
     stages {
         stage('Policy Check') {
             steps {
-                sh 'npm install -g @mergeguide/cli'
+                sh 'pip install mergeguide'
                 sh 'mergeguide check --format json > results.json'
             }
             post {
@@ -127,7 +127,7 @@ jobs:
       - checkout
       - run:
           name: Install MergeGuide
-          command: npm install -g @mergeguide/cli
+          command: pip install mergeguide
       - run:
           name: Run Policy Check
           command: mergeguide check
@@ -158,7 +158,7 @@ steps:
     inputs:
       versionSpec: '20.x'
 
-  - script: npm install -g @mergeguide/cli
+  - script: pip install mergeguide
     displayName: 'Install MergeGuide'
 
   - script: mergeguide check --format json > $(Build.ArtifactStagingDirectory)/results.json
@@ -184,7 +184,7 @@ pipelines:
       - step:
           name: Policy Check
           script:
-            - npm install -g @mergeguide/cli
+            - pip install mergeguide
             - mergeguide check
           artifacts:
             - results.json

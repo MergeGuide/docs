@@ -27,7 +27,7 @@ Error: Invalid or expired API key
 
 2. **Check expiration:**
    ```bash
-   mergeguide auth status
+   mergeguide config list
    ```
 
 3. **Regenerate key:**
@@ -53,18 +53,18 @@ Required scope: write:policies
 
 1. **Check key scopes:**
    ```bash
-   mergeguide auth status
+   mergeguide config list
    # Shows current key scopes
    ```
 
 2. **Generate key with correct scopes:**
    ```bash
-   mergeguide auth create-key --scope "read:evaluations,write:evaluations"
+   # Create an API key from the dashboard: Settings > API Keys
    ```
 
 ## Installation Issues
 
-### npm Permission Errors
+### Permission Errors
 
 **Symptoms:**
 ```
@@ -73,25 +73,21 @@ Error: EACCES: permission denied
 
 **Solutions:**
 
-1. **Use npx instead:**
+1. **Use pipx (recommended):**
    ```bash
-   npx @mergeguide/cli check
+   pipx install mergeguide
    ```
 
-2. **Fix npm permissions:**
+2. **Install with --user flag:**
    ```bash
-   mkdir ~/.npm-global
-   npm config set prefix '~/.npm-global'
-   echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
-   source ~/.bashrc
-   npm install -g @mergeguide/cli
+   pip install --user mergeguide
    ```
 
-3. **Use nvm:**
+3. **Use a virtual environment:**
    ```bash
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-   nvm install 20
-   npm install -g @mergeguide/cli
+   python3 -m venv ~/.mergeguide-venv
+   source ~/.mergeguide-venv/bin/activate
+   pip install mergeguide
    ```
 
 ### SSL Certificate Errors
@@ -187,8 +183,7 @@ Check runs for several minutes or times out.
 
 3. **Use offline mode:**
    ```bash
-   mergeguide policies sync
-   mergeguide check --offline
+   mergeguide login  # Ensure authentication is current
    ```
 
 4. **Exclude large files:**
@@ -314,8 +309,7 @@ Error: Request timeout
 
 3. **Use offline mode:**
    ```bash
-   mergeguide policies sync
-   mergeguide check --offline
+   mergeguide login  # Ensure authentication is current
    ```
 
 ### Rate Limiting

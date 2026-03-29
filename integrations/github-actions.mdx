@@ -32,7 +32,7 @@ jobs:
           node-version: '20'
 
       - name: Install MergeGuide CLI
-        run: npm install -g @mergeguide/cli
+        run: pip install mergeguide
 
       - name: Run Policy Check
         env:
@@ -185,7 +185,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install CLI
-        run: npm install -g @mergeguide/cli
+        run: pip install mergeguide
 
       - name: Run Full Scan
         env:
@@ -261,7 +261,7 @@ Cache the CLI installation:
     key: ${{ runner.os }}-mergeguide-cli
 
 - name: Install MergeGuide CLI
-  run: npm install -g @mergeguide/cli
+  run: pip install mergeguide
 ```
 
 ## Troubleshooting

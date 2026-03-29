@@ -5,7 +5,7 @@ description: MergeGuide documentation - AI-native code governance with enterpris
 
 # MergeGuide Documentation
 
-MergeGuide enforces code policies across your development workflow. Every commit and pull request runs through 711 detection rules across 15 languages. Security findings appear where developers work — VS Code, Git, GitHub, GitLab, Bitbucket, Azure DevOps.
+MergeGuide enforces code policies across your development workflow. Every commit and pull request runs through 1,099 detection rules across 15 languages. Security findings appear where developers work — VS Code, Git, GitHub, GitLab, Bitbucket, Azure DevOps.
 
 ## How It Works
 
@@ -28,7 +28,7 @@ MergeGuide enforces code policies across your development workflow. Every commit
 
 ## Compliance Frameworks
 
-18 total:
+24 total:
 
 **Security:** NIST SSDF, OWASP Top 10, OWASP ASVS L1/L2, CWE Top 25, CIS Controls, SLSA
 
@@ -38,19 +38,19 @@ MergeGuide enforces code policies across your development workflow. Every commit
 
 ## Detection Rules
 
-- 711 total detection rules
-- 237 regex patterns (known vulnerabilities)
-- 474 Semgrep AST rules (taint analysis, data flow)
+- 1,099 total detection rules
+- 130 regex patterns (known vulnerabilities)
+- 969 Semgrep AST rules (taint analysis, data flow)
 - 15 languages: Python, JavaScript, TypeScript, Java, Go, PHP, Ruby, C#, Kotlin, Swift, Rust, C, C++, Terraform, Dockerfile
 
 ## Quick Start
 
 ```bash
 # Install the CLI
-npm install -g @mergeguide/cli
+pip install mergeguide
 
 # Authenticate
-mergeguide auth login
+mergeguide login
 
 # Run your first check
 mergeguide check

@@ -12,12 +12,12 @@ MergeGuide v1.0.0 is the first production release.
 **What's in this release:**
 - 4 enforcement layers: IDE, Git hooks, AI assistants, PR gates
 - 4 SCM platforms: GitHub, GitLab, Bitbucket, Azure DevOps
-- 18 compliance frameworks with NIST OSCAL export
-- 711 detection rules across 15 languages
+- 24 compliance frameworks with NIST OSCAL export
+- 1,099 detection rules across 15 languages
 
 ### Detection Engine
 
-- **711 detection rules** — 237 regex + 474 Semgrep AST taint analysis rules
+- **1,099 detection rules** — 130 regex + 969 Semgrep AST taint analysis rules
 - **15 languages** — Python, JavaScript, TypeScript, Java, Go, PHP, Ruby, C#, Kotlin, Swift, Rust, C, C++, Terraform, Dockerfile
 - **Dual-layer analysis** — Fast regex for known patterns; Semgrep for taint analysis and data flow across all supported languages
 - All 15 languages benchmark-validated at ≥85% precision
@@ -39,15 +39,14 @@ All four SCM platforms supported with full PR gate integration:
 
 ### Compliance
 
-- **18 framework templates** — SOC 2, HIPAA, PCI-DSS, ISO 27001, GDPR, EU AI Act, DORA, NIS2, FedRAMP, StateRAMP, Colorado AI Act, NIST SSDF, OWASP Top 10, CWE Top 25, OWASP ASVS L1, OWASP ASVS L2, CIS Controls, SLSA
-- **NIST OSCAL v1.1.2 native output** — 16 custom catalogs, 3 document types, GRC platform interop
+- **24 framework templates** — OWASP Top 10, CWE Top 25, OWASP ASVS, PCI-DSS, CIS Controls, OWASP Agentic Apps, SOC 2 Type II, HIPAA, EU AI Act, GDPR, NIST SSDF, DORA, ISO 27001, NYDFS Part 500, CMMC 2.0 Level 2, NIST AI RMF, HITRUST CSF v11, FFIEC D&A, NIST SP 800-53, SLSA v1.0, FedRAMP Moderate, StateRAMP, NIS2, Colorado AI Act
+- **NIST OSCAL v1.1.2 native output** — 24 custom catalogs, 4 document types, GRC platform interop
 - **SBOM export** — CycloneDX 1.5 + SPDX 2.3, streaming ZIP download, S3 upload integration
 - **PolicyMerge** — Multi-framework conflict resolution with strictest-wins logic and overlap visualization
 - **Bypass rate tracking** — Every policy override logged; dashboard widget and drill-down report on all tiers
 
 ### Enterprise Features
 
-- **Billing** — 5 tiers: Free, Pro ($29/seat), Team ($39/seat, 5 min), Business ($79/seat, 10 min), Enterprise (custom)
 - **SAML 2.0 SSO + OIDC** — Team, Business, and Enterprise plans
 - **SCIM v2 provisioning** — Business and Enterprise plans
 - **WebAuthn/Passkeys + TOTP MFA** — All plans
@@ -57,7 +56,7 @@ All four SCM platforms supported with full PR gate integration:
 
 ### Dashboard
 
-- Compliance dashboard with framework coverage visualization for all 18 frameworks
+- Compliance dashboard with framework coverage visualization for all 24 frameworks
 - Bypass rate widget and drill-down event log
 - OSCAL and SBOM export from the dashboard
 - PolicyMerge multi-framework visualization
@@ -81,7 +80,7 @@ MergeGuide v1.0.0 is the initial GA release. No migration from a prior version i
 ### Installing the CLI
 
 ```bash
-npm install -g @mergeguide/cli
+pip install mergeguide
 ```
 
 ### Installing the VS Code Extension

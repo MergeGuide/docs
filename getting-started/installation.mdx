@@ -9,10 +9,16 @@ MergeGuide offers multiple installation methods to fit your workflow.
 
 ## CLI Installation
 
-### npm (Recommended)
+### pip (Recommended)
 
 ```bash
-npm install -g @mergeguide/cli
+pip install mergeguide
+```
+
+Or with pipx for isolated CLI installation:
+
+```bash
+pipx install mergeguide
 ```
 
 Verify installation:
@@ -21,29 +27,9 @@ Verify installation:
 mergeguide --version
 ```
 
-### pip
-
-```bash
-pip install mergeguide
-```
-
-### Homebrew (macOS)
-
-```bash
-brew tap mergeguide/tap
-brew install mergeguide
-```
-
-### Binary Downloads
-
-Download pre-built binaries from the [GitHub Releases](https://github.com/MergeGuide/mergeguide/releases) page.
-
-| Platform | Architecture | Download |
-|----------|--------------|----------|
-| macOS | Apple Silicon | `mergeguide-darwin-arm64` |
-| macOS | Intel | `mergeguide-darwin-x64` |
-| Linux | x64 | `mergeguide-linux-x64` |
-| Windows | x64 | `mergeguide-windows-x64.exe` |
+<Note>
+Requires Python 3.11+. For best results, install [Semgrep](https://semgrep.dev) alongside MergeGuide for full dual-layer scanning (regex + AST analysis).
+</Note>
 
 ## VS Code Extension
 
@@ -74,7 +60,7 @@ See [MCP Server Guide](/user-guides/mcp-server) for configuration.
 
 | Component | Requirements |
 |-----------|--------------|
-| CLI | Node.js 18+ or Python 3.9+ |
+| CLI | Python 3.11+ |
 | VS Code Extension | VS Code 1.85+ |
 | MCP Server | Node.js 18+ |
 
@@ -92,10 +78,8 @@ For air-gapped environments, MergeGuide supports offline policy evaluation:
 
 ```bash
 # Download policies for offline use
-mergeguide policies sync --offline
 
 # Run checks offline
-mergeguide check --offline
 ```
 
 Note: Offline mode requires policies to be pre-synced and does not support real-time policy updates.
@@ -104,17 +88,14 @@ Note: Offline mode requires policies to be pre-synced and does not support real-
 
 ### Permission Errors (npm)
 
-If you encounter `EACCES` errors:
+If you encounter permission errors:
 
 ```bash
-# Option 1: Use npx (no global install needed)
-npx @mergeguide/cli check
+# Option 1: Use pipx (recommended — installs in isolated environment)
+pipx install mergeguide
 
-# Option 2: Configure npm prefix
-mkdir ~/.npm-global
-npm config set prefix '~/.npm-global'
-export PATH=~/.npm-global/bin:$PATH
-npm install -g @mergeguide/cli
+# Option 2: Install with --user flag
+pip install --user mergeguide
 ```
 
 ### SSL Certificate Errors
@@ -123,18 +104,18 @@ If behind a corporate proxy:
 
 ```bash
 # Set custom CA certificate
-export NODE_EXTRA_CA_CERTS=/path/to/certificate.pem
+export REQUESTS_CA_BUNDLE=/path/to/certificate.pem
 mergeguide check
 ```
 
 ### Version Conflicts
 
-Check for conflicting installations:
+Check your installation:
 
 ```bash
 which mergeguide
-npm list -g @mergeguide/cli
 pip show mergeguide
+mergeguide --version
 ```
 
 ## Next Steps

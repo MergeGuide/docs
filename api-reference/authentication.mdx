@@ -44,10 +44,10 @@ GET https://auth.mergeguide.ai/oauth/authorize
 
 ```bash
 # Login first
-mergeguide auth login
+mergeguide login
 
 # Generate API key
-mergeguide auth create-key --name "CI/CD Key" --scope read:evaluations,write:checks
+# Create API keys from the dashboard: Settings > API Keys > Create API Key
 ```
 
 ## API Key Format
@@ -78,7 +78,7 @@ mg_key_test_x9y8z7w6v5u4t3s2r1q0...
 
 ```bash
 # Create key with multiple scopes
-mergeguide auth create-key \
+# Create via dashboard: Settings > API Keys
   --name "Developer Key" \
   --scope "read:evaluations,read:policies,write:evaluations"
 ```
@@ -117,7 +117,7 @@ mergeguide check  # CLI uses this automatically
 
 ```bash
 # Via CLI
-mergeguide auth list-keys
+# View keys in dashboard: Settings > API Keys
 
 # Via API
 curl -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
@@ -128,7 +128,7 @@ curl -H "Authorization: Bearer $MERGEGUIDE_API_KEY" \
 
 ```bash
 # Via CLI
-mergeguide auth revoke-key --key-id key_abc123
+# Revoke keys in dashboard: Settings > API Keys > Revoke
 
 # Via API
 curl -X DELETE \
@@ -141,7 +141,7 @@ curl -X DELETE \
 Set expiration when creating keys:
 
 ```bash
-mergeguide auth create-key \
+# Create via dashboard: Settings > API Keys
   --name "Temporary Key" \
   --expires-in 7d  # 7 days
 ```
@@ -234,7 +234,7 @@ ${{ secrets.MERGEGUIDE_API_KEY }}
 Restrict key usage to specific IPs:
 
 ```bash
-mergeguide auth create-key \
+# Create via dashboard: Settings > API Keys
   --name "Production Key" \
   --allowed-ips "10.0.0.0/8,192.168.1.0/24"
 ```

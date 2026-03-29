@@ -9,23 +9,25 @@ Get MergeGuide running in your development environment in under 5 minutes.
 
 ## Prerequisites
 
-- Node.js 18+ or Python 3.9+
+- Python 3.11+
 - Git repository with code to analyze
 
 ## Install the CLI
 
 ```bash
-# Using npm (recommended)
-npm install -g @mergeguide/cli
-
-# Using pip
 pip install mergeguide
+```
+
+Or with pipx for an isolated installation:
+
+```bash
+pipx install mergeguide
 ```
 
 ## Authenticate
 
 ```bash
-mergeguide auth login
+mergeguide login
 ```
 
 This opens your browser to complete authentication. Your API key is stored securely in `~/.mergeguide/credentials`.

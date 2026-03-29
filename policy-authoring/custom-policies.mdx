@@ -58,13 +58,13 @@ custom_policies:
 
 ```bash
 # Validate syntax
-mergeguide policies validate ./policies/require-logging.yaml
+mergeguide check --policy ./policies/require-logging.yaml
 
 # Test against your code
 mergeguide check --policy ./policies/require-logging.yaml
 
 # View policy details
-mergeguide policies show require-logging
+mergeguide policies  # View active policies
 ```
 
 ### Step 4: Deploy

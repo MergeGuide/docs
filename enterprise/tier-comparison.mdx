@@ -7,17 +7,9 @@ description: "Full feature and limit comparison across all MergeGuide plans"
 
 MergeGuide offers five plans. Tier gating is enforced server-side — the features available to your organization are determined by your active subscription.
 
-## Pricing
+## Plans
 
-| Plan | Price | Seat Minimum | Billing |
-|------|-------|-------------|---------|
-| **Free** | $0 | — | No billing required |
-| **Pro** | $29/seat/month | — | Monthly or annual (~18% off) |
-| **Team** | $39/seat/month | 5 seats | Monthly or annual (~18% off) |
-| **Business** | $79/seat/month | 10 seats | Monthly or annual (~18% off) |
-| **Enterprise** | Custom | — | Annual pricing, contact sales |
-
-Annual billing is available for all paid plans with approximately 18% discount. Enterprise pricing is custom — contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai).
+MergeGuide offers Free, Pro, Team, Business, and Enterprise plans. For pricing details, visit [mergeguide.ai](https://mergeguide.ai) or contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai).
 
 ## Feature Matrix
 
@@ -43,7 +35,7 @@ Annual billing is available for all paid plans with approximately 18% discount. 
 | Azure DevOps | — | — | — | — | — |
 | Slack | No | Yes | Yes | Yes | Yes |
 | Linear | No | Yes | Yes | Yes | Yes |
-| Jira | No | No | No | Yes | Yes |
+| Jira | No | No | Yes | Yes | Yes |
 | Webhooks | No | Yes | Yes | Yes | Yes |
 | API access | Yes | Yes | Yes | Yes | Yes |
 
@@ -67,12 +59,12 @@ GitLab, Bitbucket, and Azure DevOps integrations are available on all paid plans
 
 | Limit | Free | Pro | Team | Business | Enterprise |
 |-------|------|-----|------|----------|------------|
-| Max members | 3 | 5 | 25 | 50 | Unlimited |
-| Max repositories | 5 | 20 | 100 | 200 | Unlimited |
-| Evaluations/month | 100 | 1,000 | 5,000 | 10,000 | Unlimited |
+| Max members | 3 | 1 | 9 | 49 | Unlimited |
+| Max repositories | 1 | 20 | 100 | 500 | Unlimited |
+| Evaluations/month | 50 | 1,000 | 5,000 | Unlimited | Unlimited |
 | API calls/month | 1,000 | 10,000 | 50,000 | 100,000 | Unlimited |
 | Storage | 100 MB | 1 GB | 5 GB | 10 GB | Unlimited |
-| Audit log retention | 7 days | 30 days | 60 days | 90 days | 2 years |
+| Audit log retention | 7 days | 90 days | 365 days | 730 days | 730 days |
 
 ### Support
 
@@ -98,15 +90,23 @@ When you exceed your monthly evaluation limit:
 
 ## Compliance Framework Coverage
 
-Framework access is not tier-gated — all plans with compliance reports enabled (Team+) can access all 18 frameworks. The difference is in OSCAL export (Business+) and evidence export (Pro+).
+Framework access is tiered — higher plans unlock additional compliance frameworks for enriched violation reporting.
 
-| Framework | Available On |
-|-----------|-------------|
-| 18 compliance frameworks (NIST, SOC 2, HIPAA, ISO 27001, etc.) | Team, Business, Enterprise |
+| Tier | Frameworks Available |
+|------|---------------------|
+| **Free / Pro** | OWASP Top 10, CWE Top 25 (2 frameworks) |
+| **Team** | + OWASP ASVS, PCI-DSS, CIS Controls, OWASP Agentic Apps (6 total) |
+| **Business** | + SOC 2 Type II, HIPAA, EU AI Act, GDPR, NIST SSDF, DORA, ISO 27001, NYDFS Part 500, CMMC 2.0, NIST AI RMF, HITRUST CSF v11, FFIEC D&A (18 total) |
+| **Enterprise** | + NIST SP 800-53, SLSA v1.0, FedRAMP Moderate, StateRAMP, NIS2, Colorado AI Act (24 total) |
+
+All tiers receive the same vulnerability detection. Higher tiers add compliance framework citations and absence-of-controls analysis.
+
+| Feature | Available On |
+|---------|-------------|
 | OSCAL export | Business, Enterprise |
 | Evidence export (CSV/JSON) | Pro, Team, Business, Enterprise |
 
-See [Dashboard](/user-guides/dashboard) for the full framework list.
+See [Compliance Overview](/compliance/overview) for the full framework list.
 
 ## Frequently Asked Questions
 
@@ -124,4 +124,4 @@ No. All seats in an organization are on the same billing cycle.
 
 **Is there a nonprofit or startup discount?**
 
-Contact sales. We offer discounted pricing for qualified startups and nonprofits.
+Contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai) for details.

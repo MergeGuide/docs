@@ -114,13 +114,12 @@ Test policies before deploying:
 
 ```bash
 # Validate policy syntax
-mergeguide policies validate ./my-policy.yaml
+mergeguide check --policy ./my-policy.yaml
 
 # Test against specific file
 mergeguide check --policy ./my-policy.yaml src/file.ts
 
 # Test against sample code
-echo "console.log('test');" | mergeguide check --stdin --policy ./my-policy.yaml
 ```
 
 ## Policy Inheritance

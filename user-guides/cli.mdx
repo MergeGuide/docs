@@ -10,7 +10,7 @@ The MergeGuide CLI provides policy checking, management, and integration capabil
 ## Installation
 
 ```bash
-npm install -g @mergeguide/cli
+pip install mergeguide
 ```
 
 ## Commands
@@ -27,7 +27,6 @@ mergeguide check
 mergeguide check src/api/*.ts
 
 # Check a commit range
-mergeguide check --range HEAD~3..HEAD
 
 # Check with verbose output
 mergeguide check --verbose
@@ -36,7 +35,6 @@ mergeguide check --verbose
 mergeguide check --format json
 
 # Fail only on errors (ignore warnings)
-mergeguide check --strict
 ```
 
 **Options:**
@@ -45,11 +43,8 @@ mergeguide check --strict
 |--------|-------------|
 | `--staged` | Check staged changes only (default) |
 | `--all` | Check all uncommitted changes |
-| `--range <range>` | Check specific commit range |
 | `--format <fmt>` | Output format: `text`, `json`, `sarif` |
 | `--verbose` | Show detailed violation info |
-| `--strict` | Exit 1 only on failures, not warnings |
-| `--offline` | Use cached policies (no network) |
 
 ### `mergeguide auth`
 
@@ -57,16 +52,16 @@ Manage authentication.
 
 ```bash
 # Login via browser
-mergeguide auth login
+mergeguide login
 
 # Login with API key
-mergeguide auth login --api-key <key>
+mergeguide login --api-key <key>
 
 # Check auth status
-mergeguide auth status
+mergeguide config list
 
 # Logout
-mergeguide auth logout
+mergeguide login --clear
 ```
 
 ### `mergeguide policies`
@@ -75,16 +70,16 @@ Manage and inspect policies.
 
 ```bash
 # List available policies
-mergeguide policies list
+mergeguide policies
 
 # Show policy details
-mergeguide policies show <policy-id>
+mergeguide policies  # List all active policies
 
 # Sync policies for offline use
-mergeguide policies sync
+mergeguide policies  # Policies are synced automatically
 
 # Validate local policy file
-mergeguide policies validate ./my-policy.yaml
+mergeguide check --policy ./my-policy.yaml  # Validate a custom policy
 ```
 
 ### `mergeguide config`
@@ -93,7 +88,7 @@ Manage configuration.
 
 ```bash
 # Show current config
-mergeguide config show
+mergeguide config list
 
 # Set organization
 mergeguide config set org <org-id>
@@ -102,7 +97,7 @@ mergeguide config set org <org-id>
 mergeguide config set format json
 
 # Initialize project config
-mergeguide config init
+mergeguide init
 ```
 
 ### `mergeguide hooks`
@@ -117,7 +112,7 @@ mergeguide hooks install
 mergeguide hooks uninstall
 
 # Test hook without committing
-mergeguide hooks test
+mergeguide check --staged  # Test hook behavior
 ```
 
 ## Configuration File
@@ -181,14 +176,13 @@ check:
 # GitHub Actions
 - name: MergeGuide Check
   run: |
-    npm install -g @mergeguide/cli
+    pip install mergeguide
     mergeguide check --format sarif > results.sarif
 
 # GitLab CI
 mergeguide-check:
   script:
-    - npm install -g @mergeguide/cli
-    - mergeguide check --strict
+    - pip install mergeguide
 ```
 
 ### Pre-commit Hook
@@ -211,22 +205,21 @@ mergeguide check --format json | jq '.violations[] | select(.severity == "error"
 
 ```bash
 # Clear cached credentials
-mergeguide auth logout
+mergeguide login --clear
 rm -rf ~/.mergeguide/credentials
 
 # Re-authenticate
-mergeguide auth login
+mergeguide login
 ```
 
 ### Network Issues
 
 ```bash
 # Check connectivity
-mergeguide auth status
+mergeguide config list
 
 # Use offline mode
-mergeguide policies sync
-mergeguide check --offline
+mergeguide policies  # Policies are synced automatically
 ```
 
 ### Debug Mode
