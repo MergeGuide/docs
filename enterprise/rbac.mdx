@@ -5,8 +5,6 @@ description: "Manage member permissions with built-in and custom roles"
 
 # Role-Based Access Control
 
-<Info>Custom roles are available on Business and Enterprise plans. Built-in roles are available on all plans.</Info>
-
 MergeGuide uses role-based access control (RBAC) to define what each member can view and do. Every member is assigned exactly one role per organization.
 
 ## Built-in Roles
@@ -15,8 +13,8 @@ Four built-in roles cover most teams:
 
 | Role | Description |
 |------|-------------|
-| **Owner** | Full organizational control, including billing, SSO/SCIM, and org deletion. Exactly one Owner per org. |
-| **Admin** | Manages team members, policies, and SCM connections. Cannot access billing or delete the org. |
+| **Owner** | Full organizational control, including SSO/SCIM and org deletion. Exactly one Owner per org. |
+| **Admin** | Manages team members, policies, and SCM connections. Cannot delete the org. |
 | **Developer** | Reads evaluation results. Manages their own API keys. Cannot modify policies or team settings. |
 | **Viewer** | Read-only access to evaluations and compliance data. No write access of any kind. |
 
@@ -40,12 +38,9 @@ Ownership can be transferred from **Settings > Team > Transfer Ownership**. The 
 | Configure notifications | No | No | Yes | Yes |
 | Configure SSO (SAML/OIDC) | No | No | No | Yes |
 | Configure SCIM | No | No | No | Yes |
-| Manage billing | No | No | No | Yes |
 | Delete organization | No | No | No | Yes |
 
 ## Custom Roles
-
-<Info>Available on Business and Enterprise plans.</Info>
 
 Custom roles let you define granular permission sets beyond the built-in roles. Use them when:
 
@@ -85,7 +80,6 @@ Custom roles appear in the role dropdown when inviting members or editing existi
 | `notifications:write` | Configure notifications |
 | `settings:sso` | Configure SSO (Owner-level action) |
 | `settings:scim` | Configure SCIM (Owner-level action) |
-| `settings:billing` | Access billing (Owner-level action) |
 
 ### Example: Security Reviewer Role
 
@@ -149,7 +143,7 @@ See [SCIM Provisioning](/enterprise/scim-provisioning).
 
 ### Custom role option not appearing
 
-Custom roles require a Business or Enterprise plan. If you are on a lower plan, the **Roles** section in Settings is not available. Upgrade your plan to access custom roles.
+If the **Roles** section is not visible in Settings, contact [support@mergeguide.ai](mailto:support@mergeguide.ai).
 
 ### Member can't access a feature after role change
 

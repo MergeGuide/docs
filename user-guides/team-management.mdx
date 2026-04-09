@@ -11,7 +11,7 @@ Manage your team at **Settings > Team**. Only Owners and Admins can invite membe
 
 | Role | Permissions |
 |------|-------------|
-| **Owner** | Full access — billing, delete org, configure SSO/SCIM, all Admin actions |
+| **Owner** | Full access — delete org, configure SSO/SCIM, all Admin actions |
 | **Admin** | Manage policies, invite/remove members, configure SCM connections, all Developer actions |
 | **Developer** | View evaluations, manage personal API keys |
 | **Viewer** | View evaluations and compliance data, no write access |
@@ -39,7 +39,7 @@ When the invited member accepts:
 - If they already have an account, they are added to your organization and can switch to it from the org switcher
 
 <Note>
-Inviting a member consumes a seat. If you are at your seat limit, you must add more seats before sending the invitation. See [Billing & Subscription](/user-guides/billing).
+Inviting a member consumes a seat. If you are at your seat limit, contact your account administrator or [support@mergeguide.ai](mailto:support@mergeguide.ai).
 </Note>
 
 ## Role Permissions
@@ -56,7 +56,6 @@ Inviting a member consumes a seat. If you are at your seat limit, you must add m
 | Remove members | No | No | Yes | Yes |
 | Change member roles | No | No | Yes | Yes |
 | Configure SSO/SCIM | No | No | No | Yes |
-| Manage billing | No | No | No | Yes |
 | Delete organization | No | No | No | Yes |
 
 ## Changing a Member's Role
@@ -111,7 +110,7 @@ Each organization has its own policies, repositories, evaluations, and settings.
 
 ## SCIM Auto-Provisioning
 
-Business and Enterprise plans support SCIM v2 for automatic user lifecycle management. When SCIM is configured, your identity provider manages MergeGuide membership automatically — manual invitation is not required.
+SCIM v2 is available for automatic user lifecycle management. When SCIM is configured, your identity provider manages MergeGuide membership automatically — manual invitation is not required.
 
 See [SCIM Provisioning](/enterprise/scim-provisioning).
 

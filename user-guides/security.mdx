@@ -90,8 +90,6 @@ Members who do not enroll within the grace period are suspended until they compl
 
 ## IP Allowlisting
 
-<Info>Available on Enterprise plans.</Info>
-
 Restrict dashboard access to specific IP ranges:
 
 1. Go to **Settings > Security > Network Access**
@@ -107,17 +105,9 @@ Add your current IP address to the allowlist before saving. Locking yourself out
 
 All administrative actions are recorded in the audit log. View at **Settings > Security > Audit Log**.
 
-Events include: sign-in/sign-out, member invitation and removal, role changes, SSO/SCIM configuration changes, policy enable/disable, API key creation and revocation, billing changes.
+Events include: sign-in/sign-out, member invitation and removal, role changes, SSO/SCIM configuration changes, policy enable/disable, and API key creation and revocation.
 
-Audit log retention by plan:
-
-| Plan | Retention |
-|------|-----------|
-| Free | 7 days |
-| Pro | 30 days |
-| Team | 60 days |
-| Business | 90 days |
-| Enterprise | 2 years |
+Audit logs are retained for 2 years. Export as CSV or JSON for external SIEM ingestion.
 
 Export the audit log as CSV or JSON for external SIEM ingestion.
 

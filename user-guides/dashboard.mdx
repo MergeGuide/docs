@@ -88,7 +88,7 @@ Output downloads as a ZIP file or uploads directly to S3 (configure in Settings 
 
 Track policy governance health:
 
-The bypass rate dashboard shows every instance where a developer pushed code past a failing policy check. This data is available on all tiers and serves as evidence for SOC 2 CC6.1 (logical access controls monitoring).
+The bypass rate dashboard shows every instance where a developer pushed code past a failing policy check. This data serves as evidence for SOC 2 CC6.1 (logical access controls monitoring).
 
 - Timeline view showing bypass events
 - Drill-down by repository, developer, policy
@@ -112,9 +112,8 @@ Configure organization settings:
 - **Team** — Invite members, manage roles
 - **SCM Connections** — Connect GitHub, GitLab, Bitbucket, Azure DevOps
 - **API Keys** — Generate and manage API keys
-- **Security** — SSO/SAML (Team+), SCIM provisioning (Business+), WebAuthn MFA (all plans)
+- **Security** — SSO/SAML, SCIM provisioning, WebAuthn MFA
 - **Notifications** — Email, Slack, webhook configuration
-- **Billing** — Subscription management, seat counts
 
 ## Key Features
 
@@ -173,7 +172,7 @@ Settings:
 | **Viewer** | View evaluations, compliance data, bypass reports |
 | **Developer** | Viewer + manage personal API keys |
 | **Admin** | Developer + manage policies, users, SCM connections |
-| **Owner** | Admin + billing, delete organization, configure SSO/SCIM |
+| **Owner** | Admin + delete organization, configure SSO/SCIM |
 
 ## Notifications
 
@@ -222,7 +221,7 @@ See [API Reference](/api-reference/authentication) for usage.
 
 ### SCIM Auto-Provisioning
 
-Business and Enterprise plans support SCIM v2 for automatic user provisioning from your IdP. See [SCIM Setup](/enterprise/scim-provisioning).
+SCIM v2 is available for automatic user provisioning from your IdP. See [SCIM Setup](/enterprise/scim-provisioning).
 
 ## Troubleshooting
 

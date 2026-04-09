@@ -7,16 +7,13 @@ description: API rate limits and best practices
 
 MergeGuide API enforces rate limits to ensure fair usage and service stability.
 
-## Rate Limit Tiers
+## Default Rate Limits
 
-| Plan | Requests/Minute | Requests/Hour | Requests/Day |
-|------|-----------------|---------------|--------------|
-| Free | 60 | 1,200 | 14,400 |
-| Pro | 120 | 2,400 | 28,800 |
-| Team | 200 | 4,000 | 48,000 |
-| Business | 300 | 6,000 | 72,000 |
-| Enterprise | 1,000 | 20,000 | 240,000 |
-| Custom | Contact sales | Contact sales | Contact sales |
+| Requests/Minute | Requests/Hour | Requests/Day |
+|-----------------|---------------|--------------|
+| 1,000 | 20,000 | 240,000 |
+
+For custom rate limits, contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai).
 
 ## Endpoint-Specific Limits
 
@@ -262,7 +259,7 @@ async function processItems(items: Item[]): Promise<void> {
 
 ## Requesting Higher Limits
 
-For Enterprise customers needing higher limits:
+For customers needing higher limits:
 
 1. Contact your account manager
 2. Describe your use case and volume needs

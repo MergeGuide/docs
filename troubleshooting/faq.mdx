@@ -43,38 +43,6 @@ Local mode runs the full detection engine but does not upload findings.
 
 ---
 
-## Pricing & Plans
-
-### What plans does MergeGuide offer?
-
-| Plan | Frameworks | Key Features |
-|------|-----------|-------------|
-| Free | OWASP Top 10, CWE Top 25 (2) | 1 repo, 50 evals/mo, community support |
-| Pro | Same as Free (2) | 20 repos, evidence export, custom policies |
-| Team | + OWASP ASVS, PCI-DSS, CIS Controls, OWASP Agentic Apps (6) | SAML/OIDC SSO, teams, PolicyMerge, SBOM |
-| Business | + SOC 2, HIPAA, GDPR, NIST SSDF, DORA, ISO 27001, + 5 more (18) | OSCAL export, SCIM, custom roles, Security Insights |
-| Enterprise | + NIST 800-53, FedRAMP, SLSA, NIS2, + 2 more (24) | OSCAL webhooks, dedicated support, unlimited |
-
-For pricing, visit [mergeguide.ai](https://mergeguide.ai) or contact [sales@mergeguide.ai](mailto:sales@mergeguide.ai).
-
-### What does the Free plan include?
-
-Free gives individual developers access to:
-- CLI, VS Code extension, MCP server, git hooks, and PR Gate
-- OWASP Top 10 and CWE Top 25 framework templates
-- 1 connected repository
-- 50 evaluations per month
-- Community support
-
-### How do I upgrade my plan?
-
-1. Go to [portal.mergeguide.ai](https://portal.mergeguide.ai)
-2. Navigate to **Settings > Billing**
-3. Select your plan
-4. Complete payment
-
----
-
 ## Compliance
 
 ### Which compliance frameworks does MergeGuide support?
@@ -89,7 +57,7 @@ Free gives individual developers access to:
 
 ### Can I export compliance evidence for my auditor?
 
-Yes, on Business and Enterprise plans. MergeGuide exports compliance posture as NIST OSCAL v1.1.2 — the machine-readable standard used by FedRAMP and major GRC platforms. Import the output directly into Drata, Vanta, Secureframe, Tugboat Logic, or any OSCAL-compatible tool.
+Yes. MergeGuide exports compliance posture as NIST OSCAL v1.1.2 — the machine-readable standard used by FedRAMP and major GRC platforms. Import the output directly into Drata, Vanta, Secureframe, Tugboat Logic, or any OSCAL-compatible tool.
 
 From the dashboard: **Compliance > Export > OSCAL**.
 
@@ -101,7 +69,7 @@ curl -X POST https://api.mergeguide.ai/v1/compliance/reports \
   -d '{"frameworks": ["soc2"], "format": "oscal"}'
 ```
 
-**Enterprise plan** additionally supports OSCAL webhooks for automated GRC platform delivery.
+OSCAL webhooks are also available for automated GRC platform delivery.
 
 ### Is MergeGuide SOC 2 compliant?
 
@@ -109,11 +77,11 @@ SOC 2 Type II certification is on our roadmap. Contact [sales@mergeguide.ai](mai
 
 ### Can I generate SBOMs?
 
-Yes, on Team plan and above. MergeGuide generates SBOMs in CycloneDX 1.5 and SPDX 2.3 formats. Available from the dashboard under **SBOM** or via the MCP server's `generate_sbom` tool.
+Yes. MergeGuide generates SBOMs in CycloneDX 1.5 and SPDX 2.3 formats. Available from the dashboard under **SBOM** or via the MCP server's `generate_sbom` tool.
 
 ### What is bypass rate tracking?
 
-Every policy override — when a developer pushes code past a failing check — is logged and surfaced in the compliance dashboard. Bypass rate is a governance signal used as evidence for SOC 2 CC6.1 controls. Available on all plans.
+Every policy override — when a developer pushes code past a failing check — is logged and surfaced in the compliance dashboard. Bypass rate is a governance signal used as evidence for SOC 2 CC6.1 controls.
 
 ---
 
@@ -218,17 +186,34 @@ See [MCP Server](/user-guides/mcp-server) for details.
 
 ### What authentication methods are supported?
 
-- **API key** — All plans
-- **OAuth 2.0** — All plans
-- **SAML 2.0 SSO** — Team, Business, and Enterprise
-- **OIDC / OAuth 2.0 + PKCE** — Team, Business, and Enterprise
-- **SCIM v2 provisioning** — Business and Enterprise
-- **WebAuthn / Passkeys** — All plans
-- **TOTP MFA** — All plans
+- **API key**
+- **OAuth 2.0**
+- **SAML 2.0 SSO**
+- **OIDC / OAuth 2.0 + PKCE**
+- **SCIM v2 provisioning**
+- **WebAuthn / Passkeys**
+- **TOTP MFA**
 
 ### How do I set up SAML SSO?
 
 See the [SAML Setup Guide](/enterprise/saml-sso). Supported IdPs include Okta, Azure AD, Google Workspace, and any SAML 2.0-compliant provider.
+
+---
+
+## Support
+
+### How do I get help?
+
+- **Documentation:** docs.mergeguide.ai
+- **Email:** support@mergeguide.ai
+
+### How do I report a bug?
+
+Email [support@mergeguide.ai](mailto:support@mergeguide.ai) with:
+- CLI version (`mergeguide --version`)
+- Operating system
+- Steps to reproduce
+- Error message and stack trace
 
 ---
 
@@ -252,19 +237,4 @@ See the [SAML Setup Guide](/enterprise/saml-sso). Supported IdPs include Okta, A
 Create and revoke API keys from the dashboard at **Settings > API Keys**.
 
 ---
-
-## Support
-
-### How do I get help?
-
-- **Documentation:** docs.mergeguide.ai
-- **Email:** support@mergeguide.ai
-- **Enterprise:** Dedicated support channel in your plan
-
-### How do I report a bug?
-
-Email [support@mergeguide.ai](mailto:support@mergeguide.ai) with:
-- CLI version (`mergeguide --version`)
-- Operating system
-- Steps to reproduce
 - Error message and stack trace
